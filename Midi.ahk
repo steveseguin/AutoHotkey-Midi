@@ -408,8 +408,10 @@ Class Midi
       {
         __OpenMidiIn( midiInDeviceId )        
       }
+      
+      Return
 
-      __SelectMidiOutDevice:
+    __SelectMidiOutDevice:
 
       midiOutDeviceId := A_ThisMenuItemPos - 1
 
