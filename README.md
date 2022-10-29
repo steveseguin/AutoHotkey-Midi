@@ -1,3 +1,10 @@
+# About This Fork
+
+- Merged [Support for Midi Out and getDeviceByName by fashberg · Pull Request #7](https://github.com/dannywarren/AutoHotkey-Midi/pull/7)
+- Merged [Fix: NoteOff event may not triggered by 9chu · Pull Request #1](https://github.com/dannywarren/AutoHotkey-Midi/pull/1)
+
+- Add option that path through event to output device. To turn on, write `midiEventPassThrough  := True`
+
 # AutoHotkey-Midi
 
 Add MIDI input event handling to your AutoHotkey scripts
