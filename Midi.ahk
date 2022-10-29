@@ -437,8 +437,7 @@ Class Midi
   }
 
 
-
-  MidiOut(EventType, Channel, Param1, Param2)
+  MidiOut(EventType, Channel, Param1, Param2, deviceHandle = False)
   {
     ;handle is handle to midi output device returned by midiOutOpen function
     ;EventType and Channel are combined to create the MidiStatus byte.  
@@ -473,22 +472,61 @@ Class Midi
     dwMidi := MidiStatus + (Param1 << 8) + (Param2 << 16)
   
     ; handle
-    For midiOutDeviceId In __midiOutOpenHandles
+    If (deviceHandle)
     {
-      ;Call api function to send midi event  
-      result := DllCall("winmm.dll\midiOutShortMsg"
-                , UInt, __midiOutOpenHandles[midiOutDeviceId]
-                , UInt, dwMidi
-                , UInt)
-  
+      result := DllCall("winmm.dll\midiOutShortMsg", UInt, deviceHandle, UInt, dwMidi, UInt)
       if (result or errorlevel)
       {
         msgbox, There was an error sending the midi event
       }
+    }else{
+      For midiOutDeviceId In __midiOutOpenHandles
+      {
+        ;Call api function to send midi event  
+        result := DllCall("winmm.dll\midiOutShortMsg"
+                  , UInt, __midiOutOpenHandles[midiOutDeviceId]
+                  , UInt, dwMidi
+                  , UInt)
+    
+        if (result or errorlevel)
+        {
+          msgbox, There was an error sending the midi event
+        }
+      }
     }
+  }
 
+    DeviceHandleForName(deviceName)
+  {
+    If (deviceName != "")
+    {
+      For key, value In __midiOutDevices{
+        if (value.deviceName == deviceName){
+          return __midiOutOpenHandles[value.deviceNumber]
+        }
+      }
+    }
+    return False
+  }
 
-  return
+  MidiOutToDeviceId(EventType, Channel, Param1, Param2, deviceId)
+  {
+    deviceHandle := __midiOutOpenHandles[deviceId]
+    if(deviceHandle){
+      this.MidiOut(EventType, Channel, Param1, Param2, deviceHandle)
+    }else{
+      msgbox, device %deviceId% not found or not open
+    }
+  }
+
+  MidiOutToDeviceName(EventType, Channel, Param1, Param2, deviceName)
+  {
+    deviceHandle := this.DeviceHandleForName(deviceName)
+    if(deviceHandle){
+      this.MidiOut(EventType, Channel, Param1, Param2, deviceHandle)
+    }else{
+      msgbox, %deviceName% not found or not open
+    }
   }
 
   ; save and load I/O setting to ini file
