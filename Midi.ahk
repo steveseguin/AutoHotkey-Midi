@@ -86,6 +86,8 @@ Global midiLabelCallbacks := True
 ; Enable or disable lazy midi in event debugging via tooltips
 Global midiEventTooltips  := False
 
+; Enable or disable path through event that not handled to output device
+Global midiEventPassThrough  := False
 
 ; Midi class interface
 Class Midi
@@ -820,18 +822,30 @@ __MidiInCallback( wParam, lParam, msg )
 
   ; Iterate over all the label callbacks we built during this event and jump
   ; to them now (if they exist elsewhere in the code)
+  eventHandled := False
+
   If ( midiLabelCallbacks )
   {
     For labelIndex, labelName In labelCallbacks
     {
-      If IsLabel( labelName )
+      If IsLabel( labelName ){
+        eventHandled := True
         Gosub %labelName%
-    }   
+      }   
+    }
   }
 
   ; Call debugging if enabled
   __MidiEventDebug( midiEvent )
 
+  ; pass through to midi out
+  if ( midiEventPassThrough && ! eventHandled && __midiOutOpenHandlesCount > 0 )
+  {
+    for deviceId, hndl In __midiOutOpenHandles
+    {
+      midiOutResult := DllCall( "winmm.dll\midiOutShortMsg", UINT, hndl, UINT, rawBytes )
+    }
+  }
 }
 
 
