@@ -6,6 +6,8 @@
 - Add option that path through ignored event to output device. To turn on, write `midiEventPassThrough  := True` [#3](https://github.com/hetima/AutoHotkey-Midi/pull/3)
 - Add save and load I/O setting with ini file [#4](https://github.com/hetima/AutoHotkey-Midi/pull/4)
 
+- Midi out to specific device [#6](https://github.com/hetima/AutoHotkey-Midi/pull/6)
+
 # AutoHotkey-Midi
 
 Add MIDI input event handling to your AutoHotkey scripts
