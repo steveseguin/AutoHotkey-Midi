@@ -88,6 +88,7 @@ Global midiEventTooltips  := False
 
 ; Enable or disable path through event that not handled to output device
 Global midiEventPassThrough  := False
+Global passThroughDeviceHandle  := False
 
 ; Midi class interface
 Class Midi
@@ -496,7 +497,7 @@ Class Midi
     }
   }
 
-    DeviceHandleForName(deviceName)
+  DeviceHandleForName(deviceName)
   {
     If (deviceName != "")
     {
@@ -591,6 +592,10 @@ Class Midi
       }
     }
     IniWrite, %setting%, %settingFilePath%, AutoHotkeyMidi, outputDevices
+  }
+
+  SatPassThroughDeviceName(deviceName){
+    passThroughDeviceHandle := this.DeviceHandleForName(deviceName)
   }
 
 }
@@ -945,9 +950,13 @@ __MidiInCallback( wParam, lParam, msg )
   ; pass through to midi out
   if ( midiEventPassThrough && ! eventHandled && __midiOutOpenHandlesCount > 0 )
   {
-    for deviceId, hndl In __midiOutOpenHandles
-    {
-      midiOutResult := DllCall( "winmm.dll\midiOutShortMsg", UINT, hndl, UINT, rawBytes )
+    if(passThroughDeviceHandle){
+      midiOutResult := DllCall( "winmm.dll\midiOutShortMsg", UINT, passThroughDeviceHandle, UINT, rawBytes )
+    }else{
+      for deviceId, hndl In __midiOutOpenHandles
+      {
+        midiOutResult := DllCall( "winmm.dll\midiOutShortMsg", UINT, hndl, UINT, rawBytes )
+      }
     }
   }
 }
