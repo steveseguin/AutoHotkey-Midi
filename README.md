@@ -3,8 +3,8 @@
 - Merged [Support for Midi Out and getDeviceByName by fashberg · Pull Request #7](https://github.com/dannywarren/AutoHotkey-Midi/pull/7)
 - Merged [Fix: NoteOff event may not triggered by 9chu · Pull Request #1](https://github.com/dannywarren/AutoHotkey-Midi/pull/1)
 
-- Add option that path through ignored event to output device. To turn on, write `midiEventPassThrough  := True` #3
-- Add save and load I/O setting with ini file #4
+- Add option that path through ignored event to output device. To turn on, write `midiEventPassThrough  := True` [#3](https://github.com/hetima/AutoHotkey-Midi/pull/3)
+- Add save and load I/O setting with ini file [#4](https://github.com/hetima/AutoHotkey-Midi/pull/4)
 
 # AutoHotkey-Midi
 
