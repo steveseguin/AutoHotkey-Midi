@@ -489,6 +489,70 @@ Class Midi
   return
   }
 
+  ; save and load I/O setting to ini file
+  ; format is like this
+  ;   [AutoHotkeyMidi]
+  ;   inputDevices=input1name////input2name////
+  ;   outputDevices=output1name////
+  LoadIOSetting(settingFilePath)
+  {
+    If (settingFilePath = "")
+    {
+      Return
+    }
+    IniRead, setting, %settingFilePath%, AutoHotkeyMidi, inputDevices
+    If (setting == "ERROR"){
+        Return
+    }
+    names := StrSplit(setting, "////")
+    For index, inDeviceName In names
+    {
+      If (inDeviceName <> ""){
+        this.OpenMidiInByName(inDeviceName)
+      }
+    }
+
+    IniRead, setting, %settingFilePath%, AutoHotkeyMidi, outputDevices
+    If (setting == "ERROR"){
+        Return
+    }
+    names := StrSplit(setting, "////")
+    For index, outDeviceName In names
+    {
+      If (outDeviceName <> ""){
+        this.OpenMidiOutByName(outDeviceName)
+      }
+    }
+  }
+
+  ;should call in OnExit
+  SaveIOSetting(settingFilePath)
+  {
+    If (settingFilePath = "")
+    {
+      Return
+    }
+    setting := ""
+    If (__midiInOpenHandlesCount <> 0)
+    {
+      For midiInDeviceId In __midiInOpenHandles
+      {
+        setting .= __midiInDevices[midiInDeviceId].deviceName . "////"
+      }
+    }
+    IniWrite, %setting%, %settingFilePath%, AutoHotkeyMidi, inputDevices
+
+    setting := ""
+    If (__midiOutOpenHandlesCount <> 0)
+    {
+      For midiOutDeviceId In __midiOutOpenHandles
+      {
+        setting .= __midiOutDevices[midiOutDeviceId].deviceName . "////"
+      }
+    }
+    IniWrite, %setting%, %settingFilePath%, AutoHotkeyMidi, outputDevices
+  }
+
 }
 
 
