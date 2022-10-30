@@ -437,6 +437,32 @@ Class Midi
     Return __MidiInEvent
   }
 
+  MidiOutRawData(rawData, deviceHandle = False)
+  {
+    ; handle
+    If (deviceHandle)
+    {
+      result := DllCall("winmm.dll\midiOutShortMsg", UInt, deviceHandle, UInt, rawData, UInt)
+      if (result or errorlevel)
+      {
+        msgbox, There was an error sending the midi event
+      }
+    }else{
+      For midiOutDeviceId In __midiOutOpenHandles
+      {
+        ;Call api function to send midi event  
+        result := DllCall("winmm.dll\midiOutShortMsg"
+                  , UInt, __midiOutOpenHandles[midiOutDeviceId]
+                  , UInt, rawData
+                  , UInt)
+    
+        if (result or errorlevel)
+        {
+          msgbox, There was an error sending the midi event
+        }
+      }
+    }
+  }
 
   MidiOut(EventType, Channel, Param1, Param2, deviceHandle = False)
   {
@@ -471,30 +497,8 @@ Class Midi
 
     ;Midi message Dword is made up of Midi Status in lowest byte, then 1st parameter, then 2nd parameter.  Highest byte is always 0
     dwMidi := MidiStatus + (Param1 << 8) + (Param2 << 16)
-  
-    ; handle
-    If (deviceHandle)
-    {
-      result := DllCall("winmm.dll\midiOutShortMsg", UInt, deviceHandle, UInt, dwMidi, UInt)
-      if (result or errorlevel)
-      {
-        msgbox, There was an error sending the midi event
-      }
-    }else{
-      For midiOutDeviceId In __midiOutOpenHandles
-      {
-        ;Call api function to send midi event  
-        result := DllCall("winmm.dll\midiOutShortMsg"
-                  , UInt, __midiOutOpenHandles[midiOutDeviceId]
-                  , UInt, dwMidi
-                  , UInt)
-    
-        if (result or errorlevel)
-        {
-          msgbox, There was an error sending the midi event
-        }
-      }
-    }
+
+    this.MidiOutRawData(dwMidi, deviceHandle)
   }
 
   DeviceHandleForName(deviceName)
@@ -525,6 +529,26 @@ Class Midi
     deviceHandle := this.DeviceHandleForName(deviceName)
     if(deviceHandle){
       this.MidiOut(EventType, Channel, Param1, Param2, deviceHandle)
+    }else{
+      msgbox, %deviceName% not found or not open
+    }
+  }
+
+  MidiOutRawDataToDeviceId(rawData, deviceId)
+  {
+    deviceHandle := __midiOutOpenHandles[deviceId]
+    if(deviceHandle){
+      this.MidiOutRawData(rawData, deviceHandle)
+    }else{
+      msgbox, device %deviceId% not found or not open
+    }
+  }
+
+  MidiOutRawDataToDeviceName(rawData, deviceName)
+  {
+    deviceHandle := this.DeviceHandleForName(deviceName)
+    if(deviceHandle){
+      this.MidiOutRawData(rawData, deviceHandle)
     }else{
       msgbox, %deviceName% not found or not open
     }
