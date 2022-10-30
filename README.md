@@ -8,6 +8,9 @@
 
 - Midi out to specific device [#6](https://github.com/hetima/AutoHotkey-Midi/pull/6)
 
+- Add MidiOutRawData() [#7](https://github.com/hetima/AutoHotkey-Midi/pull/7)
+
+
 # AutoHotkey-Midi
 
 Add MIDI input event handling to your AutoHotkey scripts
