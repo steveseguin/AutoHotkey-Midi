@@ -95,7 +95,7 @@ Global passThroughDeviceHandle  := False
 Global midiDelegate := False
 
 ; Midi class interface
-Class Midi
+Class AHKMidi
 {
 
   ; Instance creation
@@ -565,28 +565,43 @@ Class Midi
     {
       Return
     }
-    setting := IniRead(settingFilePath, "AutoHotkeyMidi", "inputDevices")
-    If (setting == "ERROR"){
-        Return
+    If (not FileExist(settingFilePath)){
+      Return
     }
-    names := StrSplit(setting, "////")
-    For index, inDeviceName In names
+    Try
     {
-      If (inDeviceName != ""){
-        this.OpenMidiInByName(inDeviceName)
+      setting := IniRead(settingFilePath, "AutoHotkeyMidi", "inputDevices")
+      If (setting == "ERROR"){
+          Return
       }
+      names := StrSplit(setting, "////")
+      For index, inDeviceName In names
+      {
+        If (inDeviceName != ""){
+          this.OpenMidiInByName(inDeviceName)
+        }
+      }
+    }
+    catch
+    {
     }
 
-    setting := IniRead(settingFilePath, "AutoHotkeyMidi", "outputDevices")
-    If (setting == "ERROR"){
-        Return
-    }
-    names := StrSplit(setting, "////")
-    For index, outDeviceName In names
+    Try
     {
-      If (outDeviceName != ""){
-        this.OpenMidiOutByName(outDeviceName)
+      setting := IniRead(settingFilePath, "AutoHotkeyMidi", "outputDevices")
+      If (setting == "ERROR"){
+          Return
       }
+      names := StrSplit(setting, "////")
+      For index, outDeviceName In names
+      {
+        If (outDeviceName != ""){
+          this.OpenMidiOutByName(outDeviceName)
+        }
+      }
+    }
+    catch
+    {
     }
   }
 
@@ -597,25 +612,31 @@ Class Midi
     {
       Return
     }
-    setting := ""
-    If (__midiInOpenHandlesCount != 0)
+    Try
     {
-      For midiInDeviceId In __midiInOpenHandles
+      setting := ""
+      If (__midiInOpenHandlesCount != 0)
       {
-        setting .= __midiInDevices[midiInDeviceId].deviceName . "////"
+        For midiInDeviceId In __midiInOpenHandles
+        {
+          setting .= __midiInDevices[midiInDeviceId].deviceName . "////"
+        }
       }
-    }
-    IniWrite setting, settingFilePath, "AutoHotkeyMidi", "inputDevices"
+      IniWrite setting, settingFilePath, "AutoHotkeyMidi", "inputDevices"
 
-    setting := ""
-    If (__midiOutOpenHandlesCount != 0)
-    {
-      For midiOutDeviceId In __midiOutOpenHandles
+      setting := ""
+      If (__midiOutOpenHandlesCount != 0)
       {
-        setting .= __midiOutDevices[midiOutDeviceId].deviceName . "////"
+        For midiOutDeviceId In __midiOutOpenHandles
+        {
+          setting .= __midiOutDevices[midiOutDeviceId].deviceName . "////"
+        }
       }
+      IniWrite setting, settingFilePath, "AutoHotkeyMidi", "outputDevices"
     }
-    IniWrite setting, settingFilePath, "AutoHotkeyMidi", "outputDevices"
+    catch
+    {
+    }
   }
 
   SatPassThroughDeviceName(deviceName){
