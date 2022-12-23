@@ -91,6 +91,9 @@ Global midiEventTooltips  := False
 Global midiEventPassThrough  := False
 Global passThroughDeviceHandle  := False
 
+Global __MidInDevicesMenu := Menu()
+Global __MidOutDevicesMenu := Menu()
+
 ; Midi class interface
 Class Midi
 {
@@ -373,35 +376,8 @@ Class Midi
   ; Set up device selection menus
   SetupDeviceMenus()
   {
-    haveInDevices := false
-    For key, value In __midiInDevices
-    {
-      menuName := value.deviceName
-      Menu, __MidInDevices, Add, %menuName%, __SelectMidiInDevice
-      haveInDevices := true
-    }
-    haveOutDevices := false
-    For key, value In __midiOutDevices
-    {
-      menuName := value.deviceName
-      Menu, __MidOutDevices, Add, %menuName%, __SelectMidiOutDevice
-      haveOutDevices := true
-    }
-
-    Menu, Tray, Add
-    if (haveInDevices==true) {
-      Menu, Tray, Add, MIDI Input  Devices, :__MidInDevices
-    }
-    if (haveOutDevices==true) {
-      Menu, Tray, Add, MIDI Output Devices, :__MidOutDevices
-    }
-
-    Return
-
-    __SelectMidiInDevice:
-
-      midiInDeviceId := A_ThisMenuItemPos - 1
-
+    __SelectMidiInDevice(ItemName, ItemPos, MyMenu){
+      midiInDeviceId := ItemPos
       if ( __midiInOpenHandles[midiInDeviceId] > 0 )
       {
         __CloseMidiIn( midiInDeviceId )
@@ -411,11 +387,9 @@ Class Midi
         __OpenMidiIn( midiInDeviceId )        
       }
       
-      Return
-
-    __SelectMidiOutDevice:
-
-      midiOutDeviceId := A_ThisMenuItemPos - 1
+    }
+    __SelectMidiOutDevice(ItemName, ItemPos, MyMenu){
+      midiOutDeviceId := ItemPos
 
       if ( __midiOutOpenHandles[midiOutDeviceId] > 0 )
       {
@@ -425,10 +399,29 @@ Class Midi
       {
         __OpenMidiOut( midiOutDeviceId )        
       }
+    }
 
-      Return
-      
-
+    haveInDevices := false
+    For key, value In __midiInDevices
+    {
+      __MidInDevicesMenu.Add(value.deviceName, __SelectMidiInDevice)
+      haveInDevices := true
+    }
+    haveOutDevices := false
+    For key, value In __midiOutDevices
+    {
+      __MidOutDevicesMenu.Add(value.deviceName, __SelectMidiOutDevice)
+      haveOutDevices := true
+    }
+    ;A_TrayMenu.Add()
+    ; Menu, Tray, Add
+    A_TrayMenu.Add()
+    if (haveInDevices==true) {
+      A_TrayMenu.Add("MIDI Input  Devices", __MidInDevicesMenu)
+    }
+    if (haveOutDevices==true) {
+      A_TrayMenu.Add("MIDI Output Devices", __MidOutDevicesMenu)
+    }
   }
 
 
@@ -685,8 +678,7 @@ __OpenMidiIn( midiInDeviceId )
   __midiInOpenHandlesCount++
 
   ; Check this device as enabled in the menu
-  menuDeviceName := device.deviceName
-  Menu __MidInDevices, Check, %menuDeviceName%
+  __MidInDevicesMenu.Check(device.deviceName)
 
 }
 
@@ -739,8 +731,7 @@ __CloseMidiIn( midiInDeviceId )
   __midiInOpenHandlesCount--
 
   ; Uncheck this device in the menu
-  menuDeviceName := device.deviceName
-  Menu __MidInDevices, Uncheck, %menuDeviceName%
+  __MidInDevicesMenu.Uncheck(device.deviceName)
 
 }
 
@@ -1094,8 +1085,7 @@ __OpenMidiOut( midiOutDeviceId )
   __midiOutOpenHandlesCount++
 
   ; Check this device as enabled in the menu
-  menuDeviceName := device.deviceName
-  Menu __MidOutDevices, Check, %menuDeviceName%
+  __MidOutDevicesMenu.Check(device.deviceName)
 
   return
 
@@ -1126,7 +1116,6 @@ __ClosemidiOut( midiOutDeviceId )
   __midiOutOpenHandlesCount--
 
   ; UnCheck this device in the menu
-  menuDeviceName := device.deviceName
-  Menu __MidOutDevices, Uncheck, %menuDeviceName%
+  __MidOutDevicesMenu.Uncheck(device.deviceName)
 
 }
