@@ -1,7 +1,8 @@
 ;
-; Midi.ahk
+; Midi2.ahk
 ; Add MIDI input event handling to your AutoHotkey scripts
 ;
+; Based on Midi.ahk
 ; Danny Warren <danny@dannywarren.com>
 ; https://github.com/dannywarren/AutoHotkey-Midi
 ;
@@ -11,7 +12,7 @@ Persistent
 ; Always use gui mode when using the midi library, since we need something to
 ; attach midi events to
 ; Gui, +LastFound
-Gui("+LastFound")
+; Gui("+LastFound")
 
 ; Defines the string size of midi devices returned by windows (see mmsystem.h)
 Global MIDI_DEVICE_NAME_LENGTH := 32
@@ -53,7 +54,7 @@ Global MIDI_OCTAVES   := [ -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8 ]
 ; at least we won't clobber midi events from other devices if the user wants 
 ; to fetch them specifically
 Global __midiInEvent        := {}
-Global __midiInHandleEvent  := {}
+;;;;Global __midiInHandleEvent  := {}
 
 ; List of all midi input/output devices on the system
 Global __midiInDevices := {}
@@ -61,8 +62,8 @@ Global __midiOutDevices := {}
 
 ; List of midi input/output devices to listen to messages for, we do this globally
 ; since only one instance of the class can listen to a device anyhow
-Global __midiInOpenHandles := {}
-Global __midiOutOpenHandles := {}
+Global __midiInOpenHandles := Map()
+Global __midiOutOpenHandles := Map()
 
 ; Count of open handles, since ahk doesn't have a method to actually count the
 ; members of an array (it instead just returns the highest index, which isn't
@@ -76,7 +77,7 @@ Global __midiDll := 0
 
 ; The window to attach the midi callback listener to, which will default to
 ; our gui window
-Global __midiInCallbackWindow := WinExist()
+Global __midiInCallbackWindow := Gui()
 
 ; Default label prefix
 Global midiLabelPrefix := "Midi"
@@ -91,15 +92,19 @@ Global midiEventTooltips  := False
 Global midiEventPassThrough  := False
 Global passThroughDeviceHandle  := False
 
+Global __delegate := False
+
 ; Midi class interface
 Class Midi
 {
 
   ; Instance creation
-  __New()
+  __New(delegate := False)
   {
+    global __delegate
     this.__MidInDevicesMenu := Menu()
     this.__MidOutDevicesMenu := Menu()
+    __delegate := delegate
 
     ; Initialize midi environment
     this.LoadMidi()
@@ -212,7 +217,7 @@ Class Midi
   {
     global __midiInDevices
 
-    midiInDevices := []
+    midiInDevices := Map()
 
     deviceCount := DllCall( "winmm.dll\midiOutGetNumDevs" ) - 1
 
@@ -249,8 +254,7 @@ Class Midi
 
       __MidiEventDebug( midiInDevice )
 
-      midiInDevices.InsertAt( deviceNumber, midiInDevice )
-
+      midiInDevices[deviceNumber] := midiInDevice
     }
 
     __midiInDevices := midiInDevices
@@ -325,7 +329,7 @@ Class Midi
   {
     global __midiOutDevices
 
-    midiOutDevices := []
+    midiOutDevices := Map()
 
     deviceCount := DllCall( "winmm.dll\midiOutGetNumDevs" ) 
 
@@ -365,7 +369,7 @@ Class Midi
 
       __MidiEventDebug( midiOutDevice )
 
-      midiOutDevices.InsertAt( deviceNumber, midiOutDevice )
+      midiOutDevices[deviceNumber] := midiOutDevice
 
     }
 
@@ -377,8 +381,8 @@ Class Midi
   SetupDeviceMenus()
   {
     __SelectMidiInDevice(ItemName, ItemPos, MyMenu){
-      midiInDeviceId := ItemPos
-      if ( __midiInOpenHandles[midiInDeviceId] > 0 )
+      midiInDeviceId := ItemPos-1
+      if ( __midiInOpenHandles.Get(midiInDeviceId, 0) > 0 )
       {
         this.__CloseMidiIn( midiInDeviceId )
       }
@@ -389,9 +393,8 @@ Class Midi
       
     }
     __SelectMidiOutDevice(ItemName, ItemPos, MyMenu){
-      midiOutDeviceId := ItemPos
-
-      if ( __midiOutOpenHandles[midiOutDeviceId] > 0 )
+      midiOutDeviceId := ItemPos-1
+      if ( __midiOutOpenHandles.Get(midiOutDeviceId, 0) > 0 )
       {
         this.__CloseMidiOut( midiOutDeviceId )
       }
@@ -624,7 +627,7 @@ Class Midi
   __OpenMidiIn( midiInDeviceId )
   {
     global __midiInCallbackWindow
-    global __MidiInHandleEvent
+    ;;;;global __MidiInHandleEvent
     global __midiInOpenHandlesCount
 
     ; Look this device up in our device list
@@ -636,7 +639,7 @@ Class Midi
     midiInHandle := Buffer( 4, 0 )
 
     ; Open the midi device and attach event callbacks
-    midiInOpenResult := DllCall( "winmm.dll\midiInOpen", "UINT", &midiInHandle, "UINT", midiInDeviceId, "UINT", __midiInCallbackWindow, "UINT", 0, "UINT", MIDI_CALLBACK_WINDOW )
+    midiInOpenResult := DllCall( "winmm.dll\midiInOpen", "Ptr", midiInHandle, "UINT", midiInDeviceId, "UINT", __midiInCallbackWindow.Hwnd, "UINT", 0, "UINT", MIDI_CALLBACK_WINDOW, "UINT" )
 
     ; Error handling
     If ( midiInOpenResult || ! midiInHandle )
@@ -649,7 +652,7 @@ Class Midi
     midiInHandle := NumGet( midiInHandle, "UINT" )
 
     ; Start monitoring midi signals
-    midiInStartResult := DllCall( "winmm.dll\midiInStart", "UINT", midiInHandle )
+    midiInStartResult := DllCall( "winmm.dll\midiInStart", "UINT", midiInHandle, "UINT" )
 
     ; Error handling
     If ( midiInStartResult )
@@ -659,24 +662,24 @@ Class Midi
     }
 
     ; Create a spot in our global event storage for this midi input handle
-    __MidiInHandleEvent[midiInHandle] := {}
+    ;;;;__MidiInHandleEvent[midiInHandle] := {}
 
     ; Register a callback for each midi event
     ; We only need to do this once for all devices, so only do it if we are
     ; the first device to be opened
-    if ( ! __midiInOpenHandlesCount )
+    if ( __midiInOpenHandlesCount = 0)
     {
-      OnMessage( MIDI_OPEN,      "__MidiInCallback" )
-      OnMessage( MIDI_CLOSE,     "__MidiInCallback" )
-      OnMessage( MIDI_DATA,      "__MidiInCallback" )
-      OnMessage( MIDI_LONGDATA,  "__MidiInCallback" )
-      OnMessage( MIDI_ERROR,     "__MidiInCallback" )
-      OnMessage( MIDI_LONGERROR, "__MidiInCallback" )
-      OnMessage( MIDI_MOREDATA,  "__MidiInCallback" ) 
+      OnMessage( MIDI_OPEN,      __MidiInCallback )
+      OnMessage( MIDI_CLOSE,     __MidiInCallback )
+      OnMessage( MIDI_DATA,      __MidiInCallback )
+      OnMessage( MIDI_LONGDATA,  __MidiInCallback )
+      OnMessage( MIDI_ERROR,     __MidiInCallback )
+      OnMessage( MIDI_LONGERROR, __MidiInCallback )
+      OnMessage( MIDI_MOREDATA,  __MidiInCallback ) 
     }
 
     ; Add this device handle to our list of open devices
-    __midiInOpenHandles.InsertAt( midiInDeviceId, midiInHandle )
+    __midiInOpenHandles[midiInDeviceId] := midiInHandle
 
     ; Increase the tally for the number of open handles we have
     __midiInOpenHandlesCount++
@@ -697,13 +700,13 @@ Class Midi
     ; Unregister callbacks if we are the last open handle
     if ( __midiInOpenHandlesCount <= 1 )
     {
-      OnMessage( MIDI_OPEN,      "" )
-      OnMessage( MIDI_CLOSE,     "" )
-      OnMessage( MIDI_DATA,      "" )
-      OnMessage( MIDI_LONGDATA,  "" )
-      OnMessage( MIDI_ERROR,     "" )
-      OnMessage( MIDI_LONGERROR, "" )
-      OnMessage( MIDI_MOREDATA,  "" )
+      OnMessage( MIDI_OPEN,      __MidiInCallback, 0 )
+      OnMessage( MIDI_CLOSE,     __MidiInCallback, 0 )
+      OnMessage( MIDI_DATA,      __MidiInCallback, 0 )
+      OnMessage( MIDI_LONGDATA,  __MidiInCallback, 0 )
+      OnMessage( MIDI_ERROR,     __MidiInCallback, 0 )
+      OnMessage( MIDI_LONGERROR, __MidiInCallback, 0 )
+      OnMessage( MIDI_MOREDATA,  __MidiInCallback, 0 )
     }
 
     ; Destroy any midi in events that might be left over
@@ -730,7 +733,7 @@ Class Midi
     }
 
     ; Finally, remove the handle from the array
-    __midiInOpenHandles.Remove( midiInDeviceId )
+    __midiInOpenHandles.Delete( midiInDeviceId )
 
     ; Decrease the tally for the number of open handles we have
     __midiInOpenHandlesCount--
@@ -758,7 +761,7 @@ Class Midi
 
     ; Open the midi device and attach event callbacks
     midiOutOpenResult := DllCall( "winmm.dll\midiOutOpen"
-      , "UINT", &midiOutHandle
+      , "Ptr", midiOutHandle
       , "UINT", midiOutDeviceId
       , "UINT", 0
       , "UINT", 0
@@ -776,7 +779,7 @@ Class Midi
     midiOutHandle := NumGet( midiOutHandle, "UINT" )
 
     ; Add this device handle to our list of open devices
-    __midiOutOpenHandles.InsertAt( midiOutDeviceId, midiOutHandle )
+    __midiOutOpenHandles[midiOutDeviceId] := midiOutHandle
 
     ; Increase the tally for the number of open handles we have
     __midiOutOpenHandlesCount++
@@ -808,7 +811,7 @@ Class Midi
     }
 
     ; Finally, remove the handle from the array
-    __midiOutOpenHandles.Remove( midiOutDeviceId )
+    __midiOutOpenHandles.Delete( midiOutDeviceId )
 
     ; Decrease the tally for the number of open handles we have
     __midiOutOpenHandlesCount--
@@ -824,16 +827,16 @@ Class Midi
 ; Event callback for midi input event
 ; Note that since this is a callback method, it has no concept of "this" and
 ; can't access class members
-__MidiInCallback( wParam, lParam, msg )
+__MidiInCallback( wParam, lParam, msg, hwnd )
 {
   global __midiInEvent
-  global __midiInHandleEvent
+  ;;;;global __midiInHandleEvent
   ; Will hold the midi event object we are building for this event
   midiEvent := {}
 
   ; Will hold the labels we call so the user can capture this midi event, we
   ; always start with a generic ":Midi" label so it always gets called first
-  labelCallbacks := []
+  labelCallbacks := Array()
 
   ; Grab the raw midi bytes
   rawBytes := lParam
@@ -1029,7 +1032,7 @@ __MidiInCallback( wParam, lParam, msg )
   ; Store this midi in event in our global array of midi messages, so that the
   ; appropriate midi class an access it later
   __MidiInEvent               := midiEvent
-  __MidiInHandleEvent[wParam] := midiEvent
+  ;;;;__MidiInHandleEvent[wParam] := midiEvent
 
   ; Iterate over all the label callbacks we built during this event and jump
   ; to them now (if they exist elsewhere in the code)
@@ -1037,12 +1040,12 @@ __MidiInCallback( wParam, lParam, msg )
 
   If ( midiLabelCallbacks )
   {
-    For labelIndex, labelName In labelCallbacks
+    For labelName In labelCallbacks
     {
-      If IsLabel( labelName ){
+      If HasMethod(__delegate, labelName){
         eventHandled := True
-        ; Gosub %labelName%
-      }   
+        __delegate.%labelName%(midiEvent)
+      }  
     }
   }
 
