@@ -224,9 +224,9 @@ Class Midi
 
       deviceNumber := A_Index - 1
 
-      VarSetCapacity( midiInStruct, MIDI_DEVICE_IN_STRUCT_LENGTH, 0 )
+      midiInStruct := Buffer( MIDI_DEVICE_IN_STRUCT_LENGTH, 0 )
 
-      midiQueryResult := DllCall( "winmm.dll\midiInGetDevCapsA", UINT, deviceNumber, PTR, &midiInStruct, UINT, MIDI_DEVICE_IN_STRUCT_LENGTH )
+      midiQueryResult := DllCall( "winmm.dll\midiInGetDevCapsA", "UINT", deviceNumber, "PTR", &midiInStruct, "UINT", MIDI_DEVICE_IN_STRUCT_LENGTH )
 
       ; Error handling
       If ( midiQueryResult )
@@ -335,10 +335,9 @@ Class Midi
       midiOutDevice := {}
 
       deviceNumber := A_Index - 1
+      midiOutStruct := Buffer(MIDI_DEVICE_OUT_STRUCT_LENGTH, 0)
 
-      VarSetCapacity( midiOutStruct, MIDI_DEVICE_OUT_STRUCT_LENGTH, 0 )
-
-      midiQueryResult := DllCall( "winmm.dll\midiOutGetDevCapsA", UINT, deviceNumber, PTR, &midiOutStruct, UINT, MIDI_DEVICE_IN_STRUCT_LENGTH )
+      midiQueryResult := DllCall( "winmm.dll\midiOutGetDevCapsA", "UINT", deviceNumber, "PTR", &midiOutStruct, "UINT", MIDI_DEVICE_IN_STRUCT_LENGTH )
 
       ; Error handling
       If ( midiQueryResult )
@@ -432,13 +431,13 @@ Class Midi
     Return __MidiInEvent
   }
 
-  MidiOutRawData(rawData, deviceHandle = False)
+  MidiOutRawData(rawData, deviceHandle := False)
   {
     ; handle
     If (deviceHandle)
     {
-      result := DllCall("winmm.dll\midiOutShortMsg", UInt, deviceHandle, UInt, rawData, UInt)
-      if (result or errorlevel)
+      result := DllCall("winmm.dll\midiOutShortMsg", "UInt", deviceHandle, "UInt", rawData, "UInt")
+      if (result)
       {
         msgbox("There was an error sending the midi event")
       }
@@ -447,11 +446,11 @@ Class Midi
       {
         ;Call api function to send midi event  
         result := DllCall("winmm.dll\midiOutShortMsg"
-                  , UInt, __midiOutOpenHandles[midiOutDeviceId]
-                  , UInt, rawData
-                  , UInt)
+                  , "UInt", __midiOutOpenHandles[midiOutDeviceId]
+                  , "UInt", rawData
+                  , "UInt")
     
-        if (result or errorlevel)
+        if (result)
         {
           msgbox("There was an error sending the midi event")
         }
@@ -459,7 +458,7 @@ Class Midi
     }
   }
 
-  MidiOut(EventType, Channel, Param1, Param2, deviceHandle = False)
+  MidiOut(EventType, Channel, Param1, Param2, deviceHandle := False)
   {
     ;handle is handle to midi output device returned by midiOutOpen function
     ;EventType and Channel are combined to create the MidiStatus byte.  
@@ -560,26 +559,26 @@ Class Midi
     {
       Return
     }
-    IniRead, setting, %settingFilePath%, AutoHotkeyMidi, inputDevices
+    setting := IniRead(settingFilePath, "AutoHotkeyMidi", "inputDevices")
     If (setting == "ERROR"){
         Return
     }
     names := StrSplit(setting, "////")
     For index, inDeviceName In names
     {
-      If (inDeviceName <> ""){
+      If (inDeviceName != ""){
         this.OpenMidiInByName(inDeviceName)
       }
     }
 
-    IniRead, setting, %settingFilePath%, AutoHotkeyMidi, outputDevices
+    setting := IniRead(settingFilePath, "AutoHotkeyMidi", "outputDevices")
     If (setting == "ERROR"){
         Return
     }
     names := StrSplit(setting, "////")
     For index, outDeviceName In names
     {
-      If (outDeviceName <> ""){
+      If (outDeviceName != ""){
         this.OpenMidiOutByName(outDeviceName)
       }
     }
@@ -593,24 +592,24 @@ Class Midi
       Return
     }
     setting := ""
-    If (__midiInOpenHandlesCount <> 0)
+    If (__midiInOpenHandlesCount != 0)
     {
       For midiInDeviceId In __midiInOpenHandles
       {
         setting .= __midiInDevices[midiInDeviceId].deviceName . "////"
       }
     }
-    IniWrite, %setting%, %settingFilePath%, AutoHotkeyMidi, inputDevices
+    IniWrite setting, settingFilePath, "AutoHotkeyMidi", "inputDevices"
 
     setting := ""
-    If (__midiOutOpenHandlesCount <> 0)
+    If (__midiOutOpenHandlesCount != 0)
     {
       For midiOutDeviceId In __midiOutOpenHandles
       {
         setting .= __midiOutDevices[midiOutDeviceId].deviceName . "////"
       }
     }
-    IniWrite, %setting%, %settingFilePath%, AutoHotkeyMidi, outputDevices
+    IniWrite setting, settingFilePath, "AutoHotkeyMidi", "outputDevices"
   }
 
   SatPassThroughDeviceName(deviceName){
@@ -630,10 +629,10 @@ __OpenMidiIn( midiInDeviceId )
   ; Create variable to store the handle the dll open will give us
   ; NOTE: Creating variables this way doesn't work with class variables, so
   ; we have to create it locally and then store it in the class later after
-  VarSetCapacity( midiInHandle, 4, 0 )
+  midiInHandle := Buffer( 4, 0 )
 
   ; Open the midi device and attach event callbacks
-  midiInOpenResult := DllCall( "winmm.dll\midiInOpen", UINT, &midiInHandle, UINT, midiInDeviceId, UINT, __midiInCallbackWindow, UINT, 0, UINT, MIDI_CALLBACK_WINDOW )
+  midiInOpenResult := DllCall( "winmm.dll\midiInOpen", "UINT", &midiInHandle, "UINT", midiInDeviceId, "UINT", __midiInCallbackWindow, "UINT", 0, "UINT", MIDI_CALLBACK_WINDOW )
 
   ; Error handling
   If ( midiInOpenResult || ! midiInHandle )
@@ -643,10 +642,10 @@ __OpenMidiIn( midiInDeviceId )
   }
 
   ; Fetch the actual handle value from the pointer
-  midiInHandle := NumGet( midiInHandle, UINT )
+  midiInHandle := NumGet( midiInHandle, "UINT" )
 
   ; Start monitoring midi signals
-  midiInStartResult := DllCall( "winmm.dll\midiInStart", UINT, midiInHandle )
+  midiInStartResult := DllCall( "winmm.dll\midiInStart", "UINT", midiInHandle )
 
   ; Error handling
   If ( midiInStartResult )
@@ -703,23 +702,23 @@ __CloseMidiIn( midiInDeviceId )
    }
 
   ; Destroy any midi in events that might be left over
-  __MidiInHandleEvent[midiInHandle] := {}
+  ;;;;__MidiInHandleEvent[midiInHandle] := {}
 
   ; Stop monitoring midi
-  midiInStopResult := DllCall( "winmm.dll\midiInStop", UINT, __midiInOpenHandles[midiInDeviceId] )
+  midiInStopResult := DllCall( "winmm.dll\midiInStop", "UINT", __midiInOpenHandles[midiInDeviceId], "UINT" )
 
   ; Error handling
-  If ( midiInStartResult )
+  If ( midiInStopResult != 0)
   {
     MsgBox("Failed to stop midi in device")
     Return
   }
 
   ; Close the midi handle
-  midiInStopResult := DllCall( "winmm.dll\midiInClose", UINT, __midiInOpenHandles[midiInDeviceId] )
+  midiInStopResult := DllCall( "winmm.dll\midiInClose", "UINT", __midiInOpenHandles[midiInDeviceId], "UINT" )
 
   ; Error handling
-  If ( midiInStartResult )
+  If ( midiInStopResult != 0)
   {
     MsgBox("Failed to close midi in device")
     Return
@@ -748,7 +747,7 @@ __MidiInCallback( wParam, lParam, msg )
 
   ; Will hold the labels we call so the user can capture this midi event, we
   ; always start with a generic ":Midi" label so it always gets called first
-  labelCallbacks := [ midiLabel ]
+  labelCallbacks := []
 
   ; Grab the raw midi bytes
   rawBytes := lParam
@@ -874,7 +873,7 @@ __MidiInCallback( wParam, lParam, msg )
     if ( lowByte == 0x0 )
     {
       midiEvent.sysex := "SysexData"
-      midiEvent.data  := byte1
+      midiEvent.data  := data1 ;"byte1" ???
     }
     if ( lowByte == 0x1 )
     {
@@ -956,7 +955,7 @@ __MidiInCallback( wParam, lParam, msg )
     {
       If IsLabel( labelName ){
         eventHandled := True
-        Gosub %labelName%
+        ; Gosub %labelName%
       }   
     }
   }
@@ -968,11 +967,11 @@ __MidiInCallback( wParam, lParam, msg )
   if ( midiEventPassThrough && ! eventHandled && __midiOutOpenHandlesCount > 0 )
   {
     if(passThroughDeviceHandle){
-      midiOutResult := DllCall( "winmm.dll\midiOutShortMsg", UINT, passThroughDeviceHandle, UINT, rawBytes )
+      midiOutResult := DllCall( "winmm.dll\midiOutShortMsg", "UINT", passThroughDeviceHandle, "UINT", rawBytes )
     }else{
       for deviceId, hndl In __midiOutOpenHandles
       {
-        midiOutResult := DllCall( "winmm.dll\midiOutShortMsg", UINT, hndl, UINT, rawBytes )
+        midiOutResult := DllCall( "winmm.dll\midiOutShortMsg", "UINT", hndl, "UINT", rawBytes )
       }
     }
   }
@@ -991,11 +990,11 @@ __MidiEventDebug( midiEvent )
   debugStr .= "---`n"
 
   ; Always output event debug to any listening debugger
-  OutputDebug, % debugStr 
+  OutputDebug debugStr 
 
   ; If lazy tooltip debugging is enabled, do that too
   if midiEventTooltips
-    ToolTip, % debugStr
+    ToolTip debugStr
 
 }
 
@@ -1042,7 +1041,7 @@ CloseMidiOuts()
   ; Iterate again to actually close them
   For index, midiOutDeviceId In deviceIdsToClose
   {
-    this.CloseMidiOut( midiOutDeviceId )
+    CloseMidiOut( midiOutDeviceId )
   }
 
 }
@@ -1057,16 +1056,16 @@ __OpenMidiOut( midiOutDeviceId )
   ; Create variable to store the handle the dll open will give us
   ; NOTE: Creating variables this way doesn't work with class variables, so
   ; we have to create it locally and then store it in the class later after
-  VarSetCapacity( midiOutHandle, 4, 0 )
+  midiOutHandle := Buffer( 4, 0 )
   dwFlags := 0
 
   ; Open the midi device and attach event callbacks
   midiOutOpenResult := DllCall( "winmm.dll\midiOutOpen"
-    , UINT, &midiOutHandle
-    , UINT, midiOutDeviceId
-    , UINT, 0
-    , UINT, 0
-    , UINT, dwFlags
+    , "UINT", &midiOutHandle
+    , "UINT", midiOutDeviceId
+    , "UINT", 0
+    , "UINT", 0
+    , "UINT", dwFlags
     , "UInt" )
 
   ; Error handling
@@ -1077,7 +1076,7 @@ __OpenMidiOut( midiOutDeviceId )
   }
 
   ; Fetch the actual handle value from the pointer
-  midiOutHandle := NumGet( midiOutHandle, UINT )
+  midiOutHandle := NumGet( midiOutHandle, "UINT" )
 
   ; Add this device handle to our list of open devices
   __midiOutOpenHandles.Insert( midiOutDeviceId, midiOutHandle )
@@ -1101,10 +1100,10 @@ __ClosemidiOut( midiOutDeviceId )
 
   
   ; Close the midi handle
-  midiOutStopResult := DllCall( "winmm.dll\midiOutClose", UINT, __midiOutOpenHandles[midiOutDeviceId] )
+  midiOutStopResult := DllCall( "winmm.dll\midiOutClose", "UINT", __midiOutOpenHandles[midiOutDeviceId] , "UINT")
 
   ; Error handling
-  If ( midiOutStartResult )
+  If ( midiOutStopResult )
   {
     MsgBox("Failed to close midi in device")
     Return
