@@ -92,7 +92,7 @@ Global midiEventTooltips  := False
 Global midiEventPassThrough  := False
 Global passThroughDeviceHandle  := False
 
-Global __delegate := False
+Global midiDelegate := False
 
 ; Midi class interface
 Class Midi
@@ -101,10 +101,13 @@ Class Midi
   ; Instance creation
   __New(delegate := False)
   {
-    global __delegate
+    global midiDelegate
     this.__MidInDevicesMenu := Menu()
     this.__MidOutDevicesMenu := Menu()
-    __delegate := delegate
+    If ( delegate )
+    {
+      midiDelegate := delegate
+    }
 
     ; Initialize midi environment
     this.LoadMidi()
@@ -1042,9 +1045,10 @@ __MidiInCallback( wParam, lParam, msg, hwnd )
   {
     For labelName In labelCallbacks
     {
-      If HasMethod(__delegate, labelName){
+      If ( HasMethod(midiDelegate, labelName) )
+      {
         eventHandled := True
-        __delegate.%labelName%(midiEvent)
+        midiDelegate.%labelName%(midiEvent)
       }  
     }
   }
