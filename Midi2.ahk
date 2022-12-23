@@ -6,6 +6,7 @@
 ; https://github.com/dannywarren/AutoHotkey-Midi
 ;
 
+Persistent
 
 ; Always use gui mode when using the midi library, since we need something to
 ; attach midi events to
