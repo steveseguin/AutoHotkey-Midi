@@ -9,104 +9,119 @@
 
 Persistent
 
-; Always use gui mode when using the midi library, since we need something to
-; attach midi events to
-; Gui, +LastFound
-; Gui("+LastFound")
-
-; Defines the string size of midi devices returned by windows (see mmsystem.h)
-Global MIDI_DEVICE_NAME_LENGTH := 32
-
-; Defines the size of a midi input struct MIDIINCAPS (see mmsystem.h)
-Global MIDI_DEVICE_IN_STRUCT_LENGTH  := 44
-
-; Defines the size of a midi input struct MIDIINCAPS (see mmsystem.h)
-Global MIDI_DEVICE_OUT_STRUCT_LENGTH  := 50
-
-; Defines for midi event callbacks (see mmsystem.h)
-Global MIDI_CALLBACK_WINDOW   := 0x10000
-Global MIDI_CALLBACK_TASK     := 0x20000
-Global MIDI_CALLBACK_FUNCTION := 0x30000
-
-; Defines for midi event types (see mmsystem.h)
-Global MIDI_OPEN      := 0x3C1
-Global MIDI_CLOSE     := 0x3C2
-Global MIDI_DATA      := 0x3C3
-Global MIDI_LONGDATA  := 0x3C4
-Global MIDI_ERROR     := 0x3C5
-Global MIDI_LONGERROR := 0x3C6
-Global MIDI_MOREDATA  := 0x3CC
-
-; Defines the size of the standard chromatic scale
-Global MIDI_NOTE_SIZE := 12
-
-; Defines the midi notes 
-Global MIDI_NOTES     := [ "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" ]
-
-; Defines the octaves for midi notes
-Global MIDI_OCTAVES   := [ -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8 ]
-
-
-; This is where we will keep the most recent midi in event data so that it can
-; be accessed via the Midi object, since we cannot store it in the object due
-; to how events work
-; We will store the last event by the handle used to open the midi device, so
-; at least we won't clobber midi events from other devices if the user wants 
-; to fetch them specifically
-Global __midiInEvent        := {}
-;;;;Global __midiInHandleEvent  := {}
-
-; List of all midi input/output devices on the system
-Global __midiInDevices := {}
-Global __midiOutDevices := {}
-
-; List of midi input/output devices to listen to messages for, we do this globally
-; since only one instance of the class can listen to a device anyhow
-Global __midiInOpenHandles := Map()
-Global __midiOutOpenHandles := Map()
-
-; Count of open handles, since ahk doesn't have a method to actually count the
-; members of an array (it instead just returns the highest index, which isn't
-; the same thing)
-Global __midiInOpenHandlesCount := 0
-Global __midiOutOpenHandlesCount := 0
-
-; Holds a refence to the system wide midi dll, so we don't have to open it
-; multiple times
-Global __midiDll := 0
-
-; The window to attach the midi callback listener to, which will default to
-; our gui window
-Global __midiInCallbackWindow := Gui()
-
-; Default label prefix
-Global midiLabelPrefix := "Midi"
-
-; Enable or disable label event handling
-Global midiLabelCallbacks := True
-
-; Enable or disable lazy midi in event debugging via tooltips
-Global midiEventTooltips  := False
-
-; Enable or disable path through event that not handled to output device
-Global midiEventPassThrough  := False
-Global passThroughDeviceHandle  := False
-
-Global midiDelegate := False
-
 ; Midi class interface
 Class AHKMidi
 {
 
+  ; delegate
+  static _delegate := False
+  delegate
+  {
+    get => AHKMidi._delegate
+    set => AHKMidi._delegate := value
+  }
+
+  ; Enable or disable label event handling
+  static midiLabelCallbacks := True
+
+
+  ; Enable or disable path through event that not handled to output device
+  static _midiEventPassThrough := False
+  midiEventPassThrough
+  {
+    get => AHKMidi._midiEventPassThrough
+    set => AHKMidi._midiEventPassThrough := value
+  }
+  ; use SetPassThroughDeviceName(deviceName)
+  ; if not set, pass trough to all opened midi out devices
+  static passThroughDeviceHandle  := False
+
+
+
+
+  ; Defines the string size of midi devices returned by windows (see mmsystem.h)
+  static MIDI_DEVICE_NAME_LENGTH := 32
+
+  ; Defines the size of a midi input struct MIDIINCAPS (see mmsystem.h)
+  static MIDI_DEVICE_IN_STRUCT_LENGTH  := 44
+
+  ; Defines the size of a midi input struct MIDIINCAPS (see mmsystem.h)
+  static MIDI_DEVICE_OUT_STRUCT_LENGTH  := 50
+
+  ; Defines for midi event callbacks (see mmsystem.h)
+  static MIDI_CALLBACK_WINDOW   := 0x10000
+  static MIDI_CALLBACK_TASK     := 0x20000
+  static MIDI_CALLBACK_FUNCTION := 0x30000
+
+  ; Defines for midi event types (see mmsystem.h)
+  static MIDI_OPEN      := 0x3C1
+  static MIDI_CLOSE     := 0x3C2
+  static MIDI_DATA      := 0x3C3
+  static MIDI_LONGDATA  := 0x3C4
+  static MIDI_ERROR     := 0x3C5
+  static MIDI_LONGERROR := 0x3C6
+  static MIDI_MOREDATA  := 0x3CC
+
+  ; Defines the size of the standard chromatic scale
+  static MIDI_NOTE_SIZE := 12
+
+  ; Defines the midi notes 
+  static MIDI_NOTES     := [ "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" ]
+
+  ; Defines the octaves for midi notes
+  static MIDI_OCTAVES   := [ -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8 ]
+
+  ; This is where we will keep the most recent midi in event data so that it can
+  ; be accessed via the Midi object, since we cannot store it in the object due
+  ; to how events work
+  ; We will store the last event by the handle used to open the midi device, so
+  ; at least we won't clobber midi events from other devices if the user wants 
+  ; to fetch them specifically
+  static __midiInEvent        := {}
+  ;;;;static __midiInHandleEvent  := {}
+
+  ; List of all midi input/output devices on the system
+  static __midiInDevices := {}
+  static __midiOutDevices := {}
+
+  ; Default label prefix
+  static midiLabelPrefix := "Midi"
+
+  ; Holds a refence to the system wide midi dll, so we don't have to open it
+  ; multiple times
+  static __midiDll := 0
+
+  ; Always use gui mode when using the midi library, since we need something to
+  ; attach midi events to
+  ; Gui, +LastFound
+  ; Gui("+LastFound") ?
+  ; The window to attach the midi callback listener to, which will default to
+  ; our gui window
+  static __midiInCallbackWindow := Gui()
+
+  ; List of midi input/output devices to listen to messages for, we do this globally
+  ; since only one instance of the class can listen to a device anyhow
+  static __midiInOpenHandles := Map()
+  static __midiOutOpenHandles := Map()
+
+  ; Count of open handles, since ahk doesn't have a method to actually count the
+  ; members of an array (it instead just returns the highest index, which isn't
+  ; the same thing)
+  static __midiInOpenHandlesCount := 0
+  static __midiOutOpenHandlesCount := 0
+
+  ; Enable or disable lazy midi in event debugging via tooltips
+  static midiEventTooltips  := False
+
   ; Instance creation
   __New(delegate := False)
   {
-    global midiDelegate
+    ; global midiDelegate
     this.__MidInDevicesMenu := Menu()
     this.__MidOutDevicesMenu := Menu()
     If ( delegate )
     {
-      midiDelegate := delegate
+      AHKMidi._delegate := delegate
     }
 
     ; Initialize midi environment
@@ -132,25 +147,23 @@ Class AHKMidi
   ; Load midi dlls
   LoadMidi()
   {
-    global __midiDll
-    __midiDll := DllCall( "LoadLibrary", "Str", "winmm.dll", "Ptr" )
-    
-    If ( ! __midiDll )
-    {
-      MsgBox("Missing system midi library winmm.dll")
-      ExitApp
+    If ( ! AHKMidi.__midiDll ){
+      AHKMidi.__midiDll := DllCall( "LoadLibrary", "Str", "winmm.dll", "Ptr" )
+      If ( ! AHKMidi.__midiDll )
+      {
+        MsgBox("Missing system midi library winmm.dll")
+        ExitApp
+      }
     }
-
   }
 
 
   ; Unload midi dlls
   UnloadMidi()
   {
-    global __midiDll
-    If ( __midiDll )
+    If ( AHKMidi.__midiDll )
     {
-      DllCall( "FreeLibrary", "Ptr", __midiDll )
+      DllCall( "FreeLibrary", "Ptr", AHKMidi.__midiDll )
     }
 
   }
@@ -167,7 +180,7 @@ Class AHKMidi
   ; Open midi in device and start listening
   OpenMidiInByName( midiInDeviceName )
   {
-    For key, value In __midiInDevices{
+    For key, value In AHKMidi.__midiInDevices{
       if (value.deviceName==midiInDeviceName){
         this.__OpenMidiIn( key )
         return key
@@ -190,7 +203,7 @@ Class AHKMidi
   CloseMidiIns()
   {
 
-    If ( ! __midiInOpenHandlesCount )
+    If ( ! AHKMidi.__midiInOpenHandlesCount )
     {
       Return
     }
@@ -201,7 +214,7 @@ Class AHKMidi
     deviceIdsToClose := {}
 
     ; Iterate once to get a list of ids to close
-    For midiInDeviceId In __midiInOpenHandles
+    For midiInDeviceId In AHKMidi.__midiInOpenHandles
     {
       deviceIdsToClose.Push( midiInDeviceId )
     }
@@ -218,8 +231,6 @@ Class AHKMidi
   ; Query the system for a list of active midi input devices
   QueryMidiInDevices()
   {
-    global __midiInDevices
-
     midiInDevices := Map()
 
     deviceCount := DllCall( "winmm.dll\midiOutGetNumDevs" ) - 1
@@ -231,9 +242,9 @@ Class AHKMidi
 
       deviceNumber := A_Index - 1
 
-      midiInStruct := Buffer( MIDI_DEVICE_IN_STRUCT_LENGTH, 0 )
+      midiInStruct := Buffer( AHKMidi.MIDI_DEVICE_IN_STRUCT_LENGTH, 0 )
 
-      midiQueryResult := DllCall( "winmm.dll\midiInGetDevCapsA", "UINT", deviceNumber, "PTR", midiInStruct, "UINT", MIDI_DEVICE_IN_STRUCT_LENGTH )
+      midiQueryResult := DllCall( "winmm.dll\midiInGetDevCapsA", "UINT", deviceNumber, "PTR", midiInStruct, "UINT", AHKMidi.MIDI_DEVICE_IN_STRUCT_LENGTH )
 
       ; Error handling
       If ( midiQueryResult )
@@ -245,7 +256,7 @@ Class AHKMidi
       manufacturerId := NumGet( midiInStruct, 0, "USHORT" )
       productId      := NumGet( midiInStruct, 2, "USHORT" )
       driverVersion  := NumGet( midiInStruct, 4, "UINT" )
-      deviceName     := StrGet( midiInStruct.Ptr + 8, MIDI_DEVICE_NAME_LENGTH, "CP0" )
+      deviceName     := StrGet( midiInStruct.Ptr + 8, AHKMidi.MIDI_DEVICE_NAME_LENGTH, "CP0" )
       ; support        := NumGet( midiInStruct, 4, "UINT" )
 
       midiInDevice.direction      := "IN"
@@ -260,7 +271,7 @@ Class AHKMidi
       midiInDevices[deviceNumber] := midiInDevice
     }
 
-    __midiInDevices := midiInDevices
+    AHKMidi.__midiInDevices := midiInDevices
 
   }
 
@@ -277,7 +288,7 @@ Class AHKMidi
   OpenMidiOutByName( midiOutDeviceName )
   {
 
-    For key, value In __midiOutDevices{
+    For key, value In AHKMidi.__midiOutDevices{
       if (value.deviceName==midiOutDeviceName){
         this.__OpenMidiOut( key )
         return key
@@ -300,7 +311,7 @@ Class AHKMidi
   CloseMidiOuts()
   {
 
-    If ( ! __midiOutOpenHandlesCount )
+    If ( ! AHKMidi.__midiOutOpenHandlesCount )
     {
       Return
     }
@@ -311,7 +322,7 @@ Class AHKMidi
     deviceIdsToClose := {}
 
     ; Iterate once to get a list of ids to close
-    For midiOutDeviceId In __midiOutOpenHandles
+    For midiOutDeviceId In AHKMidi.__midiOutOpenHandles
     {
       deviceIdsToClose.Push( midiOutDeviceId )
     }
@@ -330,8 +341,6 @@ Class AHKMidi
   ; Query the system for a list of active midi Output devices
   QueryMidiOutDevices()
   {
-    global __midiOutDevices
-
     midiOutDevices := Map()
 
     deviceCount := DllCall( "winmm.dll\midiOutGetNumDevs" ) 
@@ -342,9 +351,9 @@ Class AHKMidi
       midiOutDevice := {}
 
       deviceNumber := A_Index - 1
-      midiOutStruct := Buffer(MIDI_DEVICE_OUT_STRUCT_LENGTH, 0)
+      midiOutStruct := Buffer(AHKMidi.MIDI_DEVICE_OUT_STRUCT_LENGTH, 0)
 
-      midiQueryResult := DllCall( "winmm.dll\midiOutGetDevCapsA", "UINT", deviceNumber, "PTR", midiOutStruct, "UINT", MIDI_DEVICE_IN_STRUCT_LENGTH )
+      midiQueryResult := DllCall( "winmm.dll\midiOutGetDevCapsA", "UINT", deviceNumber, "PTR", midiOutStruct, "UINT", AHKMidi.MIDI_DEVICE_OUT_STRUCT_LENGTH )
 
       ; Error handling
       If ( midiQueryResult )
@@ -356,12 +365,12 @@ Class AHKMidi
       manufacturerId := NumGet( midiOutStruct, 0, "USHORT" )
       productId      := NumGet( midiOutStruct, 2, "USHORT" )
       driverVersion  := NumGet( midiOutStruct, 4, "UINT" )
-      deviceName     := StrGet( midiOutStruct.Ptr + 8, MIDI_DEVICE_NAME_LENGTH, "CP0" )
-      ; technology     := NumGet( midiOutStruct, MIDI_DEVICE_NAME_LENGTH + 8 + 0, "USHORT" )
-      ; voices         := NumGet( midiOutStruct, MIDI_DEVICE_NAME_LENGTH + 8 + 2, "USHORT" )
-      ; notes          := NumGet( midiOutStruct, MIDI_DEVICE_NAME_LENGTH + 8 + 4, "USHORT" )
-      ; channelmask    := NumGet( midiOutStruct, MIDI_DEVICE_NAME_LENGTH + 8 + 8, "USHORT" ) ; +6?
-      ; support        := NumGet( midiOutStruct, MIDI_DEVICE_NAME_LENGTH + 8 + 10, "USHORT" ) ; +8?
+      deviceName     := StrGet( midiOutStruct.Ptr + 8, AHKMidi.MIDI_DEVICE_NAME_LENGTH, "CP0" )
+      ; technology     := NumGet( midiOutStruct, AHKMidi.MIDI_DEVICE_NAME_LENGTH + 8 + 0, "USHORT" )
+      ; voices         := NumGet( midiOutStruct, AHKMidi.MIDI_DEVICE_NAME_LENGTH + 8 + 2, "USHORT" )
+      ; notes          := NumGet( midiOutStruct, AHKMidi.MIDI_DEVICE_NAME_LENGTH + 8 + 4, "USHORT" )
+      ; channelmask    := NumGet( midiOutStruct, AHKMidi.MIDI_DEVICE_NAME_LENGTH + 8 + 8, "USHORT" ) ; +6?
+      ; support        := NumGet( midiOutStruct, AHKMidi.MIDI_DEVICE_NAME_LENGTH + 8 + 10, "USHORT" ) ; +8?
 
       midiOutDevice.direction      := "OUT"
       midiOutDevice.deviceNumber   := deviceNumber
@@ -376,7 +385,7 @@ Class AHKMidi
 
     }
 
-    __midiOutDevices := midiOutDevices
+    AHKMidi.__midiOutDevices := midiOutDevices
 
   }
 
@@ -385,7 +394,7 @@ Class AHKMidi
   {
     __SelectMidiInDevice(ItemName, ItemPos, MyMenu){
       midiInDeviceId := ItemPos-1
-      if ( __midiInOpenHandles.Get(midiInDeviceId, 0) > 0 )
+      if ( AHKMidi.__midiInOpenHandles.Get(midiInDeviceId, 0) > 0 )
       {
         this.__CloseMidiIn( midiInDeviceId )
       }
@@ -397,7 +406,7 @@ Class AHKMidi
     }
     __SelectMidiOutDevice(ItemName, ItemPos, MyMenu){
       midiOutDeviceId := ItemPos-1
-      if ( __midiOutOpenHandles.Get(midiOutDeviceId, 0) > 0 )
+      if ( AHKMidi.__midiOutOpenHandles.Get(midiOutDeviceId, 0) > 0 )
       {
         this.__CloseMidiOut( midiOutDeviceId )
       }
@@ -408,13 +417,13 @@ Class AHKMidi
     }
 
     haveInDevices := false
-    For key, value In __midiInDevices
+    For key, value In AHKMidi.__midiInDevices
     {
       this.__MidInDevicesMenu.Add(value.deviceName, __SelectMidiInDevice)
       haveInDevices := true
     }
     haveOutDevices := false
-    For key, value In __midiOutDevices
+    For key, value In AHKMidi.__midiOutDevices
     {
       this.__MidOutDevicesMenu.Add(value.deviceName, __SelectMidiOutDevice)
       haveOutDevices := true
@@ -434,7 +443,7 @@ Class AHKMidi
   ; Returns the last midi in event values
   MidiIn()
   {
-    Return __MidiInEvent
+    Return AHKMidi.__MidiInEvent
   }
 
   MidiOutRawData(rawData, deviceHandle := False)
@@ -448,11 +457,11 @@ Class AHKMidi
         msgbox("There was an error sending the midi event")
       }
     }else{
-      For midiOutDeviceId In __midiOutOpenHandles
+      For midiOutDeviceId In AHKMidi.__midiOutOpenHandles
       {
         ;Call api function to send midi event  
         result := DllCall("winmm.dll\midiOutShortMsg"
-                  , "UInt", __midiOutOpenHandles[midiOutDeviceId]
+                  , "UInt", AHKMidi.__midiOutOpenHandles[midiOutDeviceId]
                   , "UInt", rawData
                   , "UInt")
     
@@ -505,9 +514,9 @@ Class AHKMidi
   {
     If (deviceName != "")
     {
-      For key, value In __midiOutDevices{
+      For key, value In AHKMidi.__midiOutDevices{
         if (value.deviceName == deviceName){
-          return __midiOutOpenHandles[value.deviceNumber]
+          return AHKMidi.__midiOutOpenHandles[value.deviceNumber]
         }
       }
     }
@@ -516,7 +525,7 @@ Class AHKMidi
 
   MidiOutToDeviceId(EventType, Channel, Param1, Param2, deviceId)
   {
-    deviceHandle := __midiOutOpenHandles[deviceId]
+    deviceHandle := AHKMidi.__midiOutOpenHandles[deviceId]
     if(deviceHandle){
       this.MidiOut(EventType, Channel, Param1, Param2, deviceHandle)
     }else{
@@ -536,7 +545,7 @@ Class AHKMidi
 
   MidiOutRawDataToDeviceId(rawData, deviceId)
   {
-    deviceHandle := __midiOutOpenHandles[deviceId]
+    deviceHandle := AHKMidi.__midiOutOpenHandles[deviceId]
     if(deviceHandle){
       this.MidiOutRawData(rawData, deviceHandle)
     }else{
@@ -615,21 +624,21 @@ Class AHKMidi
     Try
     {
       setting := ""
-      If (__midiInOpenHandlesCount != 0)
+      If (AHKMidi.__midiInOpenHandlesCount != 0)
       {
-        For midiInDeviceId In __midiInOpenHandles
+        For midiInDeviceId In AHKMidi.__midiInOpenHandles
         {
-          setting .= __midiInDevices[midiInDeviceId].deviceName . "////"
+          setting .= AHKMidi.__midiInDevices[midiInDeviceId].deviceName . "////"
         }
       }
       IniWrite setting, settingFilePath, "AutoHotkeyMidi", "inputDevices"
 
       setting := ""
-      If (__midiOutOpenHandlesCount != 0)
+      If (AHKMidi.__midiOutOpenHandlesCount != 0)
       {
-        For midiOutDeviceId In __midiOutOpenHandles
+        For midiOutDeviceId In AHKMidi.__midiOutOpenHandles
         {
-          setting .= __midiOutDevices[midiOutDeviceId].deviceName . "////"
+          setting .= AHKMidi.__midiOutDevices[midiOutDeviceId].deviceName . "////"
         }
       }
       IniWrite setting, settingFilePath, "AutoHotkeyMidi", "outputDevices"
@@ -639,9 +648,9 @@ Class AHKMidi
     }
   }
 
-  SatPassThroughDeviceName(deviceName){
-    global passThroughDeviceHandle
-    passThroughDeviceHandle := this.DeviceHandleForName(deviceName)
+  SetPassThroughDeviceName(deviceName)
+  {
+    AHKMidi.passThroughDeviceHandle := this.DeviceHandleForName(deviceName)
   }
 
 
@@ -650,12 +659,10 @@ Class AHKMidi
   ; Open a handle to a midi device and start listening for messages
   __OpenMidiIn( midiInDeviceId )
   {
-    global __midiInCallbackWindow
     ;;;;global __MidiInHandleEvent
-    global __midiInOpenHandlesCount
 
     ; Look this device up in our device list
-    device := __midiInDevices[midiInDeviceId]
+    device := AHKMidi.__midiInDevices[midiInDeviceId]
 
     ; Create variable to store the handle the dll open will give us
     ; NOTE: Creating variables this way doesn't work with class variables, so
@@ -663,7 +670,7 @@ Class AHKMidi
     midiInHandle := Buffer( 4, 0 )
 
     ; Open the midi device and attach event callbacks
-    midiInOpenResult := DllCall( "winmm.dll\midiInOpen", "Ptr", midiInHandle, "UINT", midiInDeviceId, "UINT", __midiInCallbackWindow.Hwnd, "UINT", 0, "UINT", MIDI_CALLBACK_WINDOW, "UINT" )
+    midiInOpenResult := DllCall( "winmm.dll\midiInOpen", "Ptr", midiInHandle, "UINT", midiInDeviceId, "UINT", AHKMidi.__midiInCallbackWindow.Hwnd, "UINT", 0, "UINT", AHKMidi.MIDI_CALLBACK_WINDOW, "UINT" )
 
     ; Error handling
     If ( midiInOpenResult || ! midiInHandle )
@@ -691,22 +698,22 @@ Class AHKMidi
     ; Register a callback for each midi event
     ; We only need to do this once for all devices, so only do it if we are
     ; the first device to be opened
-    if ( __midiInOpenHandlesCount = 0)
+    if ( AHKMidi.__midiInOpenHandlesCount = 0)
     {
-      OnMessage( MIDI_OPEN,      __MidiInCallback )
-      OnMessage( MIDI_CLOSE,     __MidiInCallback )
-      OnMessage( MIDI_DATA,      __MidiInCallback )
-      OnMessage( MIDI_LONGDATA,  __MidiInCallback )
-      OnMessage( MIDI_ERROR,     __MidiInCallback )
-      OnMessage( MIDI_LONGERROR, __MidiInCallback )
-      OnMessage( MIDI_MOREDATA,  __MidiInCallback ) 
+      OnMessage( AHKMidi.MIDI_OPEN,      __MidiInCallback )
+      OnMessage( AHKMidi.MIDI_CLOSE,     __MidiInCallback )
+      OnMessage( AHKMidi.MIDI_DATA,      __MidiInCallback )
+      OnMessage( AHKMidi.MIDI_LONGDATA,  __MidiInCallback )
+      OnMessage( AHKMidi.MIDI_ERROR,     __MidiInCallback )
+      OnMessage( AHKMidi.MIDI_LONGERROR, __MidiInCallback )
+      OnMessage( AHKMidi.MIDI_MOREDATA,  __MidiInCallback ) 
     }
 
     ; Add this device handle to our list of open devices
-    __midiInOpenHandles[midiInDeviceId] := midiInHandle
+    AHKMidi.__midiInOpenHandles[midiInDeviceId] := midiInHandle
 
     ; Increase the tally for the number of open handles we have
-    __midiInOpenHandlesCount++
+    AHKMidi.__midiInOpenHandlesCount++
 
     ; Check this device as enabled in the menu
     this.__MidInDevicesMenu.Check(device.deviceName)
@@ -716,28 +723,26 @@ Class AHKMidi
 
   __CloseMidiIn( midiInDeviceId )
   {
-    global __midiInOpenHandlesCount
-
     ; Look this device up in our device list
-    device := __midiInDevices[midiInDeviceId]
+    device := AHKMidi.__midiInDevices[midiInDeviceId]
 
     ; Unregister callbacks if we are the last open handle
-    if ( __midiInOpenHandlesCount <= 1 )
+    if ( AHKMidi.__midiInOpenHandlesCount <= 1 )
     {
-      OnMessage( MIDI_OPEN,      __MidiInCallback, 0 )
-      OnMessage( MIDI_CLOSE,     __MidiInCallback, 0 )
-      OnMessage( MIDI_DATA,      __MidiInCallback, 0 )
-      OnMessage( MIDI_LONGDATA,  __MidiInCallback, 0 )
-      OnMessage( MIDI_ERROR,     __MidiInCallback, 0 )
-      OnMessage( MIDI_LONGERROR, __MidiInCallback, 0 )
-      OnMessage( MIDI_MOREDATA,  __MidiInCallback, 0 )
+      OnMessage( AHKMidi.MIDI_OPEN,      __MidiInCallback, 0 )
+      OnMessage( AHKMidi.MIDI_CLOSE,     __MidiInCallback, 0 )
+      OnMessage( AHKMidi.MIDI_DATA,      __MidiInCallback, 0 )
+      OnMessage( AHKMidi.MIDI_LONGDATA,  __MidiInCallback, 0 )
+      OnMessage( AHKMidi.MIDI_ERROR,     __MidiInCallback, 0 )
+      OnMessage( AHKMidi.MIDI_LONGERROR, __MidiInCallback, 0 )
+      OnMessage( AHKMidi.MIDI_MOREDATA,  __MidiInCallback, 0 )
     }
 
     ; Destroy any midi in events that might be left over
     ;;;;__MidiInHandleEvent[midiInHandle] := {}
 
     ; Stop monitoring midi
-    midiInStopResult := DllCall( "winmm.dll\midiInStop", "UINT", __midiInOpenHandles[midiInDeviceId], "UINT" )
+    midiInStopResult := DllCall( "winmm.dll\midiInStop", "UINT", AHKMidi.__midiInOpenHandles[midiInDeviceId], "UINT" )
 
     ; Error handling
     If ( midiInStopResult != 0)
@@ -747,7 +752,7 @@ Class AHKMidi
     }
 
     ; Close the midi handle
-    midiInStopResult := DllCall( "winmm.dll\midiInClose", "UINT", __midiInOpenHandles[midiInDeviceId], "UINT" )
+    midiInStopResult := DllCall( "winmm.dll\midiInClose", "UINT", AHKMidi.__midiInOpenHandles[midiInDeviceId], "UINT" )
 
     ; Error handling
     If ( midiInStopResult != 0)
@@ -757,10 +762,10 @@ Class AHKMidi
     }
 
     ; Finally, remove the handle from the array
-    __midiInOpenHandles.Delete( midiInDeviceId )
+    AHKMidi.__midiInOpenHandles.Delete( midiInDeviceId )
 
     ; Decrease the tally for the number of open handles we have
-    __midiInOpenHandlesCount--
+    AHKMidi.__midiInOpenHandlesCount--
 
     ; Uncheck this device in the menu
     this.__MidInDevicesMenu.Uncheck(device.deviceName)
@@ -772,10 +777,8 @@ Class AHKMidi
   ; Open a handle to a midi device and start listening for messages
   __OpenMidiOut( midiOutDeviceId )
   {
-    global __midiOutOpenHandlesCount
-
     ; Look this device up in our device list
-    device := __midiOutDevices[midiOutDeviceId]
+    device := AHKMidi.__midiOutDevices[midiOutDeviceId]
 
     ; Create variable to store the handle the dll open will give us
     ; NOTE: Creating variables this way doesn't work with class variables, so
@@ -803,10 +806,10 @@ Class AHKMidi
     midiOutHandle := NumGet( midiOutHandle, "UINT" )
 
     ; Add this device handle to our list of open devices
-    __midiOutOpenHandles[midiOutDeviceId] := midiOutHandle
+    AHKMidi.__midiOutOpenHandles[midiOutDeviceId] := midiOutHandle
 
     ; Increase the tally for the number of open handles we have
-    __midiOutOpenHandlesCount++
+    AHKMidi.__midiOutOpenHandlesCount++
 
     ; Check this device as enabled in the menu
     this.__MidOutDevicesMenu.Check(device.deviceName)
@@ -818,14 +821,12 @@ Class AHKMidi
 
   __ClosemidiOut( midiOutDeviceId )
   {
-    global __midiOutOpenHandlesCount
-  
     ; Look this device up in our device list
-    device := __midiOutDevices[midiOutDeviceId]
+    device := AHKMidi.__midiOutDevices[midiOutDeviceId]
 
     
     ; Close the midi handle
-    midiOutStopResult := DllCall( "winmm.dll\midiOutClose", "UINT", __midiOutOpenHandles[midiOutDeviceId] , "UINT")
+    midiOutStopResult := DllCall( "winmm.dll\midiOutClose", "UINT", AHKMidi.__midiOutOpenHandles[midiOutDeviceId] , "UINT")
 
     ; Error handling
     If ( midiOutStopResult )
@@ -835,10 +836,10 @@ Class AHKMidi
     }
 
     ; Finally, remove the handle from the array
-    __midiOutOpenHandles.Delete( midiOutDeviceId )
+    AHKMidi.__midiOutOpenHandles.Delete( midiOutDeviceId )
 
     ; Decrease the tally for the number of open handles we have
-    __midiOutOpenHandlesCount--
+    AHKMidi.__midiOutOpenHandlesCount--
 
     ; UnCheck this device in the menu
     this.__MidOutDevicesMenu.Uncheck(device.deviceName)
@@ -853,7 +854,6 @@ Class AHKMidi
 ; can't access class members
 __MidiInCallback( wParam, lParam, msg, hwnd )
 {
-  global __midiInEvent
   ;;;;global __midiInHandleEvent
   ; Will hold the midi event object we are building for this event
   midiEvent := {}
@@ -910,7 +910,7 @@ __MidiInCallback( wParam, lParam, msg, hwnd )
   }
 
   ; Add a label callback for the status, ie ":MidiNoteOn"
-  labelCallbacks.Push( midiLabelPrefix . midiEvent.status )
+  labelCallbacks.Push( AHKMidi.midiLabelPrefix . midiEvent.status )
 
   ; Determine how to handle the one or two data bytes sent along with the event
   ; based on what type of status event was seen
@@ -922,24 +922,24 @@ __MidiInCallback( wParam, lParam, msg, hwnd )
     midiEvent.velocity    := data2
 
     ; Figure out which chromatic note this note number represents
-    noteScaleNumber := Mod( midiEvent.noteNumber, MIDI_NOTE_SIZE )
+    noteScaleNumber := Mod( midiEvent.noteNumber, AHKMidi.MIDI_NOTE_SIZE )
 
     ; Look up the name of the note in the scale
-    midiEvent.note := MIDI_NOTES[ noteScaleNumber + 1 ]
+    midiEvent.note := AHKMidi.MIDI_NOTES[ noteScaleNumber + 1 ]
 
     ; Determine the octave of the note in the scale 
-    noteOctaveNumber := Floor( midiEvent.noteNumber / MIDI_NOTE_SIZE )
+    noteOctaveNumber := Floor( midiEvent.noteNumber / AHKMidi.MIDI_NOTE_SIZE )
 
     ; Look up the octave for the note
-    midiEvent.octave := MIDI_OCTAVES[ noteOctaveNumber + 1 ]
+    midiEvent.octave := AHKMidi.MIDI_OCTAVES[ noteOctaveNumber + 1 ]
 
     ; Create a friendly name for the note and octave, ie: "C4"
     midiEvent.noteName := midiEvent.note . midiEvent.octave
 
     ; Add label callbacks for notes, ie ":MidiNoteOnA", ":MidiNoteOnA5", ":MidiNoteOn97"
-    labelCallbacks.Push( midiLabelPrefix . midiEvent.status . midiEvent.note )
-    labelCallbacks.Push( midiLabelPrefix . midiEvent.status . midiEvent.noteName )
-    labelCallbacks.Push( midiLabelPrefix . midiEvent.status . midiEvent.noteNumber )
+    labelCallbacks.Push( AHKMidi.midiLabelPrefix . midiEvent.status . midiEvent.note )
+    labelCallbacks.Push( AHKMidi.midiLabelPrefix . midiEvent.status . midiEvent.noteName )
+    labelCallbacks.Push( AHKMidi.midiLabelPrefix . midiEvent.status . midiEvent.noteNumber )
 
   }
   else if ( midiEvent.status == "ControlChange" )
@@ -950,7 +950,7 @@ __MidiInCallback( wParam, lParam, msg, hwnd )
     midiEvent.value      := data2
 
     ; Add label callback for this controller change, ie ":MidiControlChange12"
-    labelCallbacks.Push( midiLabelPrefix . midiEvent.status . midiEvent.controller )
+    labelCallbacks.Push( AHKMidi.midiLabelPrefix . midiEvent.status . midiEvent.controller )
 
   }
   else if ( midiEvent.status == "ProgramChange" )
@@ -960,7 +960,7 @@ __MidiInCallback( wParam, lParam, msg, hwnd )
     midiEvent.program := data1
 
     ; Add label callback for this program change, ie ":MidiProgramChange2"
-    labelCallbacks.Push( midiLabelPrefix . midiEvent.status . midiEvent.program )
+    labelCallbacks.Push( AHKMidi.midiLabelPrefix . midiEvent.status . midiEvent.program )
 
   }
   else if ( midiEvent.status == "ChannelPressure" )
@@ -1036,7 +1036,7 @@ __MidiInCallback( wParam, lParam, msg, hwnd )
     }
     
     ; Add label callback for sysex event, ie: ":MidiClock" or ":MidiStop"
-    labelCallbacks.Push( midiLabelPrefix . midiEvent.sysex )
+    labelCallbacks.Push( AHKMidi.midiLabelPrefix . midiEvent.sysex )
 
   }
 
@@ -1055,21 +1055,21 @@ __MidiInCallback( wParam, lParam, msg, hwnd )
 
   ; Store this midi in event in our global array of midi messages, so that the
   ; appropriate midi class an access it later
-  __MidiInEvent               := midiEvent
+  AHKMidi.__MidiInEvent := midiEvent
   ;;;;__MidiInHandleEvent[wParam] := midiEvent
 
   ; Iterate over all the label callbacks we built during this event and jump
   ; to them now (if they exist elsewhere in the code)
   eventHandled := False
 
-  If ( midiLabelCallbacks )
+  If ( AHKMidi.midiLabelCallbacks )
   {
     For labelName In labelCallbacks
     {
-      If ( HasMethod(midiDelegate, labelName) )
+      If ( HasMethod(AHKMidi._delegate, labelName, 1) )
       {
         eventHandled := True
-        midiDelegate.%labelName%(midiEvent)
+        AHKMidi._delegate.%labelName%(midiEvent)
       }  
     }
   }
@@ -1078,12 +1078,12 @@ __MidiInCallback( wParam, lParam, msg, hwnd )
   __MidiEventDebug( midiEvent )
 
   ; pass through to midi out
-  if ( midiEventPassThrough && ! eventHandled && __midiOutOpenHandlesCount > 0 )
+  if ( AHKMidi._midiEventPassThrough && ! eventHandled && AHKMidi.__midiOutOpenHandlesCount > 0 )
   {
-    if(passThroughDeviceHandle){
-      midiOutResult := DllCall( "winmm.dll\midiOutShortMsg", "UINT", passThroughDeviceHandle, "UINT", rawBytes )
+    if(AHKMidi.passThroughDeviceHandle){
+      midiOutResult := DllCall( "winmm.dll\midiOutShortMsg", "UINT", AHKMidi.passThroughDeviceHandle, "UINT", rawBytes )
     }else{
-      for deviceId, hndl In __midiOutOpenHandles
+      for deviceId, hndl In AHKMidi.__midiOutOpenHandles
       {
         midiOutResult := DllCall( "winmm.dll\midiOutShortMsg", "UINT", hndl, "UINT", rawBytes )
       }
@@ -1107,7 +1107,8 @@ __MidiEventDebug( midiEvent )
   ; OutputDebug debugStr 
 
   ; ; If lazy tooltip debugging is enabled, do that too
-  ; if midiEventTooltips
+  ; if (AHKMidi.midiEventTooltips){
   ;   ToolTip debugStr
+  ; }
 
 }
