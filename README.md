@@ -19,7 +19,7 @@ Class MyDelegate
         MsgBox("C4 Pressed")
     }
 
-	; use "s" instead of "#"
+    ; use "s" instead of "#"
     MidiNoteOnCs4(event) {
         MsgBox("C#4 Pressed")
     }
