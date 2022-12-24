@@ -27,7 +27,7 @@ Class MyDelegate
     MidiControlChange(event) {
         MsgBox(event.controller . "=" . event.value)
 
-        ; pass through to midi out this event
+        ; pass through this event to midi out device
         event.eventHandled := false
     }
 }
