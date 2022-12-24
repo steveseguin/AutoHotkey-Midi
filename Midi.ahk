@@ -234,7 +234,7 @@ Class Midi
       productId      := NumGet( midiInStruct, 2, "USHORT" )
       driverVersion  := NumGet( midiInStruct, 4, "UINT" )
       deviceName     := StrGet( &midiInStruct + 8, MIDI_DEVICE_NAME_LENGTH, "CP0" )
-      support        := NumGet( midiInStruct, 4, "UINT" )
+      ; support        := NumGet( midiInStruct, 4, "UINT" )
 
       midiInDevice.direction      := "IN"
       midiInDevice.deviceNumber   := deviceNumber
@@ -333,7 +333,7 @@ Class Midi
 
       VarSetCapacity( midiOutStruct, MIDI_DEVICE_OUT_STRUCT_LENGTH, 0 )
 
-      midiQueryResult := DllCall( "winmm.dll\midiOutGetDevCapsA", UINT, deviceNumber, PTR, &midiOutStruct, UINT, MIDI_DEVICE_IN_STRUCT_LENGTH )
+      midiQueryResult := DllCall( "winmm.dll\midiOutGetDevCapsA", UINT, deviceNumber, PTR, &midiOutStruct, UINT, MIDI_DEVICE_OUT_STRUCT_LENGTH )
 
       ; Error handling
       If ( midiQueryResult )
@@ -346,11 +346,11 @@ Class Midi
       productId      := NumGet( midiOutStruct, 2, "USHORT" )
       driverVersion  := NumGet( midiOutStruct, 4, "UINT" )
       deviceName     := StrGet( &midiOutStruct + 8, MIDI_DEVICE_NAME_LENGTH, "CP0" )
-      technology     := NumGet( midiOutStruct, MIDI_DEVICE_NAME_LENGTH + 8 + 0, "USHORT" )
-      voices         := NumGet( midiOutStruct, MIDI_DEVICE_NAME_LENGTH + 8 + 2, "USHORT" )
-      notes          := NumGet( midiOutStruct, MIDI_DEVICE_NAME_LENGTH + 8 + 4, "USHORT" )
-      channelmask    := NumGet( midiOutStruct, MIDI_DEVICE_NAME_LENGTH + 8 + 8, "USHORT" )
-      support        := NumGet( midiOutStruct, MIDI_DEVICE_NAME_LENGTH + 8 + 10, "USHORT" )
+      ; technology     := NumGet( midiOutStruct, MIDI_DEVICE_NAME_LENGTH + 8 + 0, "USHORT" )
+      ; voices         := NumGet( midiOutStruct, MIDI_DEVICE_NAME_LENGTH + 8 + 2, "USHORT" )
+      ; notes          := NumGet( midiOutStruct, MIDI_DEVICE_NAME_LENGTH + 8 + 4, "USHORT" )
+      ; channelmask    := NumGet( midiOutStruct, MIDI_DEVICE_NAME_LENGTH + 8 + 8, "USHORT" )
+      ; support        := NumGet( midiOutStruct, MIDI_DEVICE_NAME_LENGTH + 8 + 10, "USHORT" )
 
       midiOutDevice.direction      := "OUT"
       midiOutDevice.deviceNumber   := deviceNumber
@@ -618,7 +618,7 @@ Class Midi
     IniWrite, %setting%, %settingFilePath%, AutoHotkeyMidi, outputDevices
   }
 
-  SatPassThroughDeviceName(deviceName){
+  SetPassThroughDeviceName(deviceName){
     passThroughDeviceHandle := this.DeviceHandleForName(deviceName)
   }
 
