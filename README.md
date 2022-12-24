@@ -1,5 +1,49 @@
 # About This Fork
 
+## Midi2.ahk
+This is compatible with AutoHotkey v2. Due to this impact, the description method has been changed. Like this.
+
+```ahk
+
+#include "path\to\Midi2.ahk"
+
+midi := AHKMidi()
+;midi.OpenMidiInByName("name")
+;midi.OpenMidiOutByName("name")
+midi.midiEventPassThrough := True
+midi.delegate := MyDelegate()
+
+Class MyDelegate
+{
+    MidiNoteOnC4(event) {
+        MsgBox("C4 Pressed")
+    }
+
+	; use "s" instead of "#"
+    MidiNoteOnCs4(event) {
+        MsgBox("C#4 Pressed")
+    }
+
+    MidiControlChange(event) {
+        MsgBox(event.controller . "=" . event.value)
+
+		; pass through to midi out this event
+		event.eventHandled := false
+    }
+}
+
+; save and load devices setting
+Global settingFilePath := A_ScriptDir . "\setting.ini"
+midi.LoadIOSetting(settingFilePath)
+OnExit ExitFunc
+ExitFunc(ExitReason, ExitCode){
+    midi.SaveIOSetting(settingFilePath)
+}
+
+```
+
+## Midi.ahk
+
 - Merged [Support for Midi Out and getDeviceByName by fashberg · Pull Request #7](https://github.com/dannywarren/AutoHotkey-Midi/pull/7)
 - Merged [Fix: NoteOff event may not triggered by 9chu · Pull Request #1](https://github.com/dannywarren/AutoHotkey-Midi/pull/1)
 
@@ -43,7 +87,7 @@ MidiControlChange1:
 
 ## Requirements
 
-* A modern version of AutoHotKey (1.1+) from http://ahkscript.org/
+* A modern version of AutoHotKey (1.1+) from https://www.autohotkey.com/
 * A system with winmm.dll (Windows 2000 or greater)
 
 ## License
