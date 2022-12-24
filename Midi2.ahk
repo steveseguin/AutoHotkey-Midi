@@ -66,7 +66,7 @@ Class AHKMidi
   static MIDI_NOTE_SIZE := 12
 
   ; Defines the midi notes 
-  static MIDI_NOTES     := [ "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" ]
+  static MIDI_NOTES     := [ "C", "Cs", "D", "Ds", "E", "F", "Fs", "G", "Gs", "A", "As", "B" ]
 
   ; Defines the octaves for midi notes
   static MIDI_OCTAVES   := [ -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8 ]
