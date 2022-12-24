@@ -4,6 +4,7 @@
 This is compatible with AutoHotkey v2. Due to this impact, the description method has been changed. Like this.
 
 ```ahk
+
 #include "path\to\Midi2.ahk"
 
 midi := AHKMidi()
@@ -18,10 +19,27 @@ Class MyDelegate
         MsgBox("C4 Pressed")
     }
 
+	; use "s" instead of "#"
+    MidiNoteOnCs4(event) {
+        MsgBox("C#4 Pressed")
+    }
+
     MidiControlChange(event) {
         MsgBox(event.controller . "=" . event.value)
+
+		; pass through to midi out this event
+		event.eventHandled := false
     }
 }
+
+; save and load devices setting
+Global settingFilePath := A_ScriptDir . "\setting.ini"
+midi.LoadIOSetting(settingFilePath)
+OnExit ExitFunc
+ExitFunc(ExitReason, ExitCode){
+    midi.SaveIOSetting(settingFilePath)
+}
+
 ```
 
 ## Midi.ahk
@@ -69,7 +87,7 @@ MidiControlChange1:
 
 ## Requirements
 
-* A modern version of AutoHotKey (1.1+) from http://ahkscript.org/
+* A modern version of AutoHotKey (1.1+) from https://www.autohotkey.com/
 * A system with winmm.dll (Windows 2000 or greater)
 
 ## License
