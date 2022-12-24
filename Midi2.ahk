@@ -114,15 +114,11 @@ Class AHKMidi
   static midiEventTooltips  := False
 
   ; Instance creation
-  __New(delegate := False)
+  __New()
   {
     ; global midiDelegate
     this.__MidInDevicesMenu := Menu()
     this.__MidOutDevicesMenu := Menu()
-    If ( delegate )
-    {
-      AHKMidi._delegate := delegate
-    }
 
     ; Initialize midi environment
     this.LoadMidi()
