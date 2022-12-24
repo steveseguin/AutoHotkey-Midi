@@ -1,9 +1,9 @@
 ;
-; Midi2.ahk
+; Midi2.ahk for AutoHotkey v2
 ; Add MIDI input event handling to your AutoHotkey scripts
+; https://github.com/hetima/AutoHotkey-Midi
 ;
-; Based on Midi.ahk
-; Danny Warren <danny@dannywarren.com>
+; Based on Midi.ahk by Danny Warren
 ; https://github.com/dannywarren/AutoHotkey-Midi
 ;
 
