@@ -1,5 +1,31 @@
 # About This Fork
 
+## Midi2.ahk
+This is compatible with AutoHotkey v2. Due to this impact, the description method has been changed. Like this.
+
+```ahk
+#include "path\to\Midi2.ahk"
+
+midi := AHKMidi()
+;midi.OpenMidiInByName("name")
+;midi.OpenMidiOutByName("name")
+midi.midiEventPassThrough := True
+midi.delegate := MyDelegate()
+
+Class MyDelegate
+{
+    MidiNoteOnC4(event) {
+        MsgBox("C4 Pressed")
+    }
+
+    MidiControlChange(event) {
+        MsgBox(event.controller . "=" . event.value)
+    }
+}
+```
+
+## Midi.ahk
+
 - Merged [Support for Midi Out and getDeviceByName by fashberg · Pull Request #7](https://github.com/dannywarren/AutoHotkey-Midi/pull/7)
 - Merged [Fix: NoteOff event may not triggered by 9chu · Pull Request #1](https://github.com/dannywarren/AutoHotkey-Midi/pull/1)
 
