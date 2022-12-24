@@ -499,6 +499,10 @@ Class AHKMidi
       Param2 := Param1 >> 8 ;MSB of wheel value
       Param1 := Param1 & 0x00FF ;strip MSB, leave LSB only
     }
+    else
+    {
+      Return
+    }
 
     ;Midi message Dword is made up of Midi Status in lowest byte, then 1st parameter, then 2nd parameter.  Highest byte is always 0
     dwMidi := MidiStatus + (Param1 << 8) + (Param2 << 16)
