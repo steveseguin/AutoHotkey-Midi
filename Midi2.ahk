@@ -1060,7 +1060,7 @@ __MidiInCallback( wParam, lParam, msg, hwnd )
 
   ; Iterate over all the label callbacks we built during this event and jump
   ; to them now (if they exist elsewhere in the code)
-  eventHandled := False
+  midiEvent.eventHandled := False
 
   If ( AHKMidi.midiLabelCallbacks )
   {
@@ -1068,7 +1068,7 @@ __MidiInCallback( wParam, lParam, msg, hwnd )
     {
       If ( HasMethod(AHKMidi._delegate, labelName, 1) )
       {
-        eventHandled := True
+        midiEvent.eventHandled := True
         AHKMidi._delegate.%labelName%(midiEvent)
       }  
     }
@@ -1078,7 +1078,7 @@ __MidiInCallback( wParam, lParam, msg, hwnd )
   __MidiEventDebug( midiEvent )
 
   ; pass through to midi out
-  if ( AHKMidi._midiEventPassThrough && ! eventHandled && AHKMidi.__midiOutOpenHandlesCount > 0 )
+  if ( AHKMidi._midiEventPassThrough && ! midiEvent.eventHandled && AHKMidi.__midiOutOpenHandlesCount > 0 )
   {
     if(AHKMidi.passThroughDeviceHandle){
       midiOutResult := DllCall( "winmm.dll\midiOutShortMsg", "UINT", AHKMidi.passThroughDeviceHandle, "UINT", rawBytes )
