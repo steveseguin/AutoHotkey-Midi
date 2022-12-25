@@ -18,6 +18,7 @@ Class MyDelegate
 {
     ; if specificProcessCallback is set true
     ; trigger only when the applicable process is front
+    ; replace any spaces or "." in the process name with "_".
     explorer_exe_MidiNoteOnC4(event) {
         MsgBox("C4 on explorer.exe")
     }
