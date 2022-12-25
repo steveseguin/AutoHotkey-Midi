@@ -24,6 +24,13 @@ Class AHKMidi
   ; Enable or disable label event handling
   static midiLabelCallbacks := True
 
+  ; Enable specific process callback like explorer_exe_MidiNoteOnC(event){}
+  static _specificProcessCallback := False
+  specificProcessCallback
+  {
+    get => AHKMidi._specificProcessCallback
+    set => AHKMidi._specificProcessCallback := value
+  }
 
   ; Enable or disable path through event that not handled to output device
   static _midiEventPassThrough := False
@@ -1064,9 +1071,22 @@ __MidiInCallback( wParam, lParam, msg, hwnd )
 
   If ( AHKMidi.midiLabelCallbacks )
   {
+    If ( AHKMidi._specificProcessCallback ){
+      processPrefix := __GetProcessLabel()
+    }else{
+      processPrefix := False
+    }
     For labelName In labelCallbacks
     {
-      If ( HasMethod(AHKMidi._delegate, labelName, 1) )
+      If ( processPrefix ){
+        processLabel := processPrefix . labelName
+        If ( HasMethod(AHKMidi._delegate, processLabel, 1) )
+        {
+          midiEvent.eventHandled := True
+          AHKMidi._delegate.%processLabel%(midiEvent)
+        } 
+      }
+      If (midiEvent.eventHandled = False and HasMethod(AHKMidi._delegate, labelName, 1) )
       {
         midiEvent.eventHandled := True
         AHKMidi._delegate.%labelName%(midiEvent)
@@ -1089,6 +1109,20 @@ __MidiInCallback( wParam, lParam, msg, hwnd )
       }
     }
   }
+}
+
+__GetProcessLabel()
+{
+  try{
+    result := WinGetProcessName("A")
+    result := StrReplace(result, "." , "_")
+    result := StrReplace(result, A_Space, "_")
+    result := StrReplace(result, "#", "_")
+    Return result . "_"
+  }catch as e{
+    ;type(e) = "TargetError"
+  }
+  Return False
 }
 
 
