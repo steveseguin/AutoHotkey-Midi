@@ -44,8 +44,15 @@ Class AHKMidi
   static passThroughDeviceHandle  := False
 
 
-
-
+  _settingFilePath := False
+  settingFilePath
+  {
+    get => this._settingFilePath
+    set {
+      this._settingFilePath := value
+      this.LoadIOSetting(this._settingFilePath)
+    }
+  }
   ; Defines the string size of midi devices returned by windows (see mmsystem.h)
   static MIDI_DEVICE_NAME_LENGTH := 32
 
@@ -123,6 +130,7 @@ Class AHKMidi
   ; Instance creation
   __New()
   {
+    this._settingFilePath := False
     ; global midiDelegate
     this.__MidInDevicesMenu := Menu()
     this.__MidOutDevicesMenu := Menu()
@@ -405,7 +413,7 @@ Class AHKMidi
       {
         this.__OpenMidiIn( midiInDeviceId )        
       }
-      
+      this.SaveIOSetting(this._settingFilePath)
     }
     __SelectMidiOutDevice(ItemName, ItemPos, MyMenu){
       midiOutDeviceId := ItemPos-1
@@ -417,6 +425,7 @@ Class AHKMidi
       {
         this.__OpenMidiOut( midiOutDeviceId )        
       }
+      this.SaveIOSetting(this._settingFilePath)
     }
 
     haveInDevices := false
@@ -575,18 +584,18 @@ Class AHKMidi
   ;   [AutoHotkeyMidi]
   ;   inputDevices=input1name////input2name////
   ;   outputDevices=output1name////
-  LoadIOSetting(settingFilePath)
+  LoadIOSetting(filePath)
   {
-    If (settingFilePath = "")
+    If (filePath = False or filePath = "")
     {
       Return
     }
-    If (not FileExist(settingFilePath)){
+    If (not FileExist(filePath)){
       Return
     }
     Try
     {
-      setting := IniRead(settingFilePath, "AutoHotkeyMidi", "inputDevices")
+      setting := IniRead(filePath, "AutoHotkeyMidi", "inputDevices")
       If (setting == "ERROR"){
           Return
       }
@@ -604,7 +613,7 @@ Class AHKMidi
 
     Try
     {
-      setting := IniRead(settingFilePath, "AutoHotkeyMidi", "outputDevices")
+      setting := IniRead(filePath, "AutoHotkeyMidi", "outputDevices")
       If (setting == "ERROR"){
           Return
       }
@@ -622,9 +631,9 @@ Class AHKMidi
   }
 
   ;should call in OnExit
-  SaveIOSetting(settingFilePath)
+  SaveIOSetting(filePath)
   {
-    If (settingFilePath = "")
+    If (filePath = False or filePath = "")
     {
       Return
     }
@@ -638,7 +647,7 @@ Class AHKMidi
           setting .= AHKMidi.__midiInDevices[midiInDeviceId].deviceName . "////"
         }
       }
-      IniWrite setting, settingFilePath, "AutoHotkeyMidi", "inputDevices"
+      IniWrite setting, filePath, "AutoHotkeyMidi", "inputDevices"
 
       setting := ""
       If (AHKMidi.__midiOutOpenHandlesCount != 0)
@@ -648,7 +657,7 @@ Class AHKMidi
           setting .= AHKMidi.__midiOutDevices[midiOutDeviceId].deviceName . "////"
         }
       }
-      IniWrite setting, settingFilePath, "AutoHotkeyMidi", "outputDevices"
+      IniWrite setting, filePath, "AutoHotkeyMidi", "outputDevices"
     }
     catch
     {

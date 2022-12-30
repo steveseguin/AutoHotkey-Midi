@@ -8,11 +8,17 @@ This is compatible with AutoHotkey v2. Due to this impact, the description metho
 #include "path\to\Midi2.ahk"
 
 midi := AHKMidi()
-;midi.OpenMidiInByName("name")
-;midi.OpenMidiOutByName("name")
 midi.midiEventPassThrough := True
 midi.delegate := MyDelegate()
 ;midi.specificProcessCallback := True
+
+; open midi device manually
+; midi.OpenMidiInByName("name")
+; midi.OpenMidiOutByName("name")
+;
+; or save and load devices setting with ini file
+; auto save selection from task tray menu
+midi.settingFilePath := A_ScriptDir . "\setting.ini"
 
 Class MyDelegate
 {
@@ -38,14 +44,6 @@ Class MyDelegate
         ; pass through this event to midi out device
         event.eventHandled := false
     }
-}
-
-; save and load devices setting
-Global settingFilePath := A_ScriptDir . "\setting.ini"
-midi.LoadIOSetting(settingFilePath)
-OnExit ExitFunc
-ExitFunc(ExitReason, ExitCode){
-    midi.SaveIOSetting(settingFilePath)
 }
 
 ```
