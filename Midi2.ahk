@@ -1127,6 +1127,8 @@ __GetProcessLabel()
     result := StrReplace(result, "." , "_")
     result := StrReplace(result, A_Space, "_")
     result := StrReplace(result, "#", "_")
+    result := StrReplace(result, "(", "_")
+    result := StrReplace(result, ")", "_")
     Return result . "_"
   }catch as e{
     ;type(e) = "TargetError"
