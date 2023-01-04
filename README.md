@@ -1,4 +1,8 @@
-(Using this project in https://github.com/steveseguin/powerpoint_remote)
+Note from Steve: I'm using this AHK-MIDI v2 library in https://github.com/steveseguin/powerpoint_remote.
+
+Thank you to the original devs.
+
+------------------------------------ (original readme below) ------
 
 # About This Fork
 
